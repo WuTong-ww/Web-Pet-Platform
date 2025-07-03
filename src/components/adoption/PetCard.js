@@ -1,49 +1,84 @@
-// src/components/adoption/PetCard.js
-import React from 'react';
-import { Heart, MapPin, TrendingUp } from 'lucide-react';
+// ✅ 文件：src/components/PetCard.js
+import React from "react";
 
-const PetCard = ({ pet }) => {
+export default function PetCard({ pet }) {
+  const {
+    name,
+    image,
+    detailUrl,
+    gender,
+    age,
+    vaccinated,
+    neutered,
+    tags,
+    source,
+    description
+  } = pet;
+
+  const renderTag = (label, color) => (
+    <span
+      style={{
+        backgroundColor: color || "#eee",
+        color: "#333",
+        fontSize: "0.75rem",
+        padding: "2px 6px",
+        marginRight: "4px",
+        borderRadius: "4px",
+        display: "inline-block"
+      }}
+    >
+      {label}
+    </span>
+  );
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 group">
-      <div className="relative">
-        <img 
-          src={pet.image} 
-          alt={pet.name} 
-          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" 
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "https://source.unsplash.com/300x300/?pet,silhouette";
-          }}
-        />
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
-          <TrendingUp size={16} className="text-red-500" />
-          <span className="text-sm font-bold text-gray-800">{pet.popularity}%</span>
-        </div>
-        <div className="absolute bottom-4 left-4 bg-purple-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-semibold">
-          {pet.adoptionCenter}
-        </div>
+    <div
+      style={{
+        width: "220px",
+        border: "1px solid #ddd",
+        borderRadius: "8px",
+        padding: "10px",
+        backgroundColor: "#fff",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+      }}
+    >
+      <img
+        src={image}
+        alt={name}
+        style={{ width: "100%", height: "160px", objectFit: "cover", borderRadius: "4px" }}
+      />
+      <h3 style={{ fontSize: "1.1rem", marginTop: "0.5rem" }}>{name}</h3>
+
+      <div style={{ margin: "4px 0" }}>
+        {gender && renderTag(gender === "female" || gender === "女" ? "母" : "公", "#fcd5ce")}
+        {age && renderTag(age, "#e0f7fa")}
+        {vaccinated && renderTag("已接种", "#c8e6c9")}
+        {neutered && renderTag("已绝育", "#ffe0b2")}
+        {tags && tags.map((t, i) => renderTag(t, "#d7ccc8"))}
       </div>
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">{pet.name}</h3>
-        <p className="text-gray-600 mb-2">{pet.breed} • {pet.age}</p>
-        <div className="flex items-center text-gray-500 mb-4">
-          <MapPin size={16} className="mr-2" />
-          <span className="text-sm">{pet.location}</span>
+
+      {description && (
+        <p style={{ fontSize: "0.85rem", color: "#555", margin: "6px 0" }}>
+          {description.slice(0, 60)}...
+        </p>
+      )}
+
+      {detailUrl && (
+        <a
+          href={detailUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: "0.85rem", color: "#1a73e8", textDecoration: "none" }}
+        >
+          查看详情
+        </a>
+      )}
+
+      {source && (
+        <div style={{ marginTop: "6px", fontSize: "0.75rem", color: "#888", fontStyle: "italic" }}>
+          来自：{source === "szadopt" ? "领养之家" : "Petfinder"}
         </div>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {pet.tags && pet.tags.map((tag, index) => (
-            <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
-              {tag}
-            </span>
-          ))}
-        </div>
-        <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-          <Heart size={18} className="inline mr-2" />
-          申请领养
-        </button>
-      </div>
+      )}
     </div>
   );
-};
-
-export default PetCard;
+}

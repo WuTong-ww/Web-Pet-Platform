@@ -1,0 +1,70 @@
+Folder PATH listing for volume Windows-SSD
+Volume serial number is 0DA4-49ED
+C:.
+│   .env
+│   .gitignore
+│   npm
+│   package-lock.json
+│   package.json
+│   postcss.config.js
+│   README.md
+│   tailwind.config.js
+│   tree.txt
+│   
+├───public
+│       favicon.ico
+│       index.html
+│       logo192.png
+│       logo512.png
+│       manifest.json
+│       robots.txt
+│       
+└───src
+    │   App.css
+    │   App.js
+    │   App.test.js
+    │   index.css
+    │   index.js
+    │   logo.svg
+    │   reportWebVitals.js
+    │   setupTests.js
+    │   密钥
+    │   
+    ├───components
+    │   ├───adoption
+    │   │       AdoptionFilter.js
+    │   │       PetCard.js
+    │   │       PopularityRanking.js
+    │   │       PopularPetsGrid.js
+    │   │       
+    │   ├───ai
+    │   │       MoodAnalyzer.js
+    │   │       SmartAssistant.js
+    │   │       
+    │   ├───common
+    │   │       Header.js
+    │   │       LoadingSpinner.js
+    │   │       Navigation.js
+    │   │       
+    │   ├───maps
+    │   │       PetActivityMap.js
+    │   │       
+    │   └───profiles
+    │           HealthRecord.js
+    │           PetProfile.js
+    │           
+    ├───contexts
+    │       RealTimeDataContext.js
+    │       
+    ├───services
+    │       adoptionService.js
+    │       aiService.js
+    │       mapService.js
+    │       
+    ├───styles
+    │       components.css
+    │       globals.css
+    │       
+    └───utils
+            dateUtils.js
+            
