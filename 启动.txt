@@ -1,0 +1,8 @@
+服务器
+cd server
+node index.js
+cd server
+node test.js//测试脚本
+
+前端
+npm start

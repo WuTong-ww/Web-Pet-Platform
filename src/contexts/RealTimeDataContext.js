@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { fetchAdoptablePets, fetchPopularPets } from '../services/adoptionService';
+import { fetchAdoptablePets, fetchPopularPets, searchPets } from '../services/adoptionService';
 import { fetchNearbyActivities } from '../services/mapService';
 
 const RealTimeDataContext = createContext();
@@ -18,9 +18,17 @@ export const RealTimeDataProvider = ({ children }) => {
     location: '',
     breed: '',
     age: '',
-    type: 'all'
+    type: 'all',
+    size: '',
+    gender: '',
+    query: ''
   });
-  const [activityFilter, setActivityFilter] = useState('');
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalCount: 0,
+    hasNextPage: false,
+    hasPreviousPage: false
+  });
   
   // 全局统计数据状态
   const [globalStats, setGlobalStats] = useState({
@@ -32,8 +40,17 @@ export const RealTimeDataProvider = ({ children }) => {
     lastUpdated: null
   });
 
-  // 从真实 API 数据计算全局统计数据
-  const calculateGlobalStats = (pets) => {
+  // 爬取状态管理
+  const [crawlStatus, setCrawlStatus] = useState({
+    isActive: false,
+    progress: 0,
+    message: '',
+    lastCrawlTime: null,
+    lastCrawlCount: 0
+  });
+
+  // 从真实数据计算全局统计数据
+  const calculateGlobalStats = (pets, totalCount) => {
     const now = new Date();
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
     
@@ -42,10 +59,10 @@ export const RealTimeDataProvider = ({ children }) => {
     );
     
     return {
-      totalPets: pets.length,
-      adoptedToday: Math.floor(Math.random() * 50) + 20, // 模拟今日领养数
-      activeUsers: Math.floor(Math.random() * 100) + 500, // 模拟活跃用户
-      successRate: Math.floor(Math.random() * 20) + 80, // 模拟成功率
+      totalPets: totalCount,
+      adoptedToday: Math.floor(Math.random() * 50) + 20,
+      activeUsers: Math.floor(Math.random() * 100) + 500,
+      successRate: Math.floor(Math.random() * 20) + 80,
       newPetsToday: todayPets.length,
       lastUpdated: new Date()
     };
@@ -79,12 +96,22 @@ export const RealTimeDataProvider = ({ children }) => {
         },
         {
           id: 3,
+          type: 'adoption',
+          petName: '小白',
+          petBreed: '中华田园犬',
+          adopterName: '王女士',
+          location: '深圳市',
+          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+          message: '小白通过深圳宠物领养网找到了新家！'
+        },
+        {
+          id: 4,
           type: 'medical',
           petName: 'Buddy',
           petBreed: 'Golden Retriever',
           centerName: '爱心动物医院',
           location: '广州市',
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+          timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
           message: 'Buddy 完成了健康检查'
         }
       ];
@@ -98,24 +125,33 @@ export const RealTimeDataProvider = ({ children }) => {
   };
 
   // 加载可领养宠物
-  const loadAdoptablePets = async (currentFilters = filters) => {
+  const loadAdoptablePets = async (currentFilters = filters, page = 1, limit = 50) => {
     try {
       setIsLoading(true);
       setConnectionStatus('connecting');
       
-      console.log('正在从 Petfinder API 加载宠物数据...');
+      console.log('正在加载宠物数据...', { filters: currentFilters, page, limit });
       
-      const pets = await fetchAdoptablePets(currentFilters);
-      setAdoptablePets(pets);
+      const result = await fetchAdoptablePets(currentFilters, page, limit);
+      
+      if (page === 1) {
+        // 第一页，替换数据
+        setAdoptablePets(result.pets);
+      } else {
+        // 后续页面，追加数据
+        setAdoptablePets(prev => [...prev, ...result.pets]);
+      }
+      
+      setPagination(result.pagination);
       
       // 计算全局统计数据
-      const stats = calculateGlobalStats(pets);
+      const stats = calculateGlobalStats(result.pets, result.pagination.totalCount);
       setGlobalStats(stats);
       
       setConnectionStatus('connected');
       setError(null);
       
-      console.log('成功加载宠物数据:', pets.length, '只宠物');
+      console.log('成功加载宠物数据:', result.pets.length, '只宠物，总计:', result.pagination.totalCount);
       
     } catch (err) {
       console.error('加载宠物数据失败:', err);
@@ -129,9 +165,9 @@ export const RealTimeDataProvider = ({ children }) => {
   // 加载热门宠物
   const loadPopularPets = async () => {
     try {
-      console.log('正在从 Petfinder API 加载热门宠物...');
+      console.log('正在加载热门宠物...');
       
-      const pets = await fetchPopularPets();
+      const pets = await fetchPopularPets(15); // 获取前15只热门宠物
       setPopularPets(pets);
       
       console.log('成功加载热门宠物:', pets.length, '只宠物');
@@ -167,6 +203,137 @@ export const RealTimeDataProvider = ({ children }) => {
     }
   };
 
+  // 加载更多宠物
+  const loadMorePets = async () => {
+    if (!pagination.hasNextPage || isLoading) return;
+    
+    const nextPage = pagination.currentPage + 1;
+    await loadAdoptablePets(filters, nextPage, 50);
+  };
+
+  // 重置并加载第一页
+  const resetAndLoadFirstPage = async (newFilters = filters) => {
+    setFilters(newFilters);
+    await loadAdoptablePets(newFilters, 1, 50);
+  };
+
+  // 搜索宠物
+  const searchPetsWithFilters = async (query, searchFilters = filters) => {
+    try {
+      setIsLoading(true);
+      setConnectionStatus('connecting');
+      
+      console.log('正在搜索宠物:', query, searchFilters);
+      
+      const result = await searchPets(query, searchFilters, 1, 50);
+      
+      setAdoptablePets(result.pets);
+      setPagination(result.pagination);
+      
+      // 更新筛选条件
+      const updatedFilters = { ...searchFilters, query };
+      setFilters(updatedFilters);
+      
+      // 计算全局统计数据
+      const stats = calculateGlobalStats(result.pets, result.pagination.totalCount);
+      setGlobalStats(stats);
+      
+      setConnectionStatus('connected');
+      setError(null);
+      
+      console.log('搜索完成:', result.pets.length, '只宠物');
+      
+    } catch (err) {
+      console.error('搜索宠物失败:', err);
+      setError('Failed to search pets');
+      setConnectionStatus('disconnected');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 手动触发爬取
+  const triggerCrawl = async () => {
+    try {
+      setCrawlStatus(prev => ({
+        ...prev,
+        isActive: true,
+        progress: 0,
+        message: '正在连接香港SPCA网站...'
+      }));
+
+      console.log('🕷️ 开始手动爬取香港SPCA数据...');
+      
+      // 模拟进度更新
+      const progressInterval = setInterval(() => {
+        setCrawlStatus(prev => ({
+          ...prev,
+          progress: Math.min(prev.progress + Math.random() * 15, 90),
+          message: prev.progress < 30 ? '正在获取宠物列表...' :
+                   prev.progress < 60 ? '正在抓取宠物详情...' :
+                   '正在处理数据...'
+        }));
+      }, 500);
+      
+      // 调用后端爬取API
+      const response = await fetch('http://localhost:8080/crawl/china', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        setCrawlStatus(prev => ({
+          ...prev,
+          isActive: false,
+          progress: 100,
+          message: `成功爬取 ${result.count} 条宠物数据`,
+          lastCrawlTime: new Date(),
+          lastCrawlCount: result.count
+        }));
+
+        console.log('✅ 手动爬取完成:', result.count, '条数据');
+        
+        // 爬取成功后，自动刷新数据
+        await refreshData();
+        
+        return result;
+      } else {
+        throw new Error(result.message || '爬取失败');
+      }
+
+    } catch (error) {
+      console.error('❌ 手动爬取失败:', error);
+      setCrawlStatus(prev => ({
+        ...prev,
+        isActive: false,
+        progress: 0,
+        message: `爬取失败: ${error.message}`
+      }));
+      throw error;
+    }
+  };
+
+  // 重置爬取状态
+  const resetCrawlStatus = () => {
+    setCrawlStatus({
+      isActive: false,
+      progress: 0,
+      message: '',
+      lastCrawlTime: null,
+      lastCrawlCount: 0
+    });
+  };
+
   // 初始化数据加载
   useEffect(() => {
     const initializeData = async () => {
@@ -188,7 +355,13 @@ export const RealTimeDataProvider = ({ children }) => {
   // 当筛选条件变化时重新加载数据
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      loadAdoptablePets(filters);
+      if (filters.query) {
+        // 如果有搜索词，执行搜索
+        searchPetsWithFilters(filters.query, filters);
+      } else {
+        // 否则执行正常筛选
+        loadAdoptablePets(filters, 1, 50);
+      }
     }, 500); // 500ms 防抖
 
     return () => clearTimeout(debounceTimer);
@@ -217,7 +390,7 @@ export const RealTimeDataProvider = ({ children }) => {
     try {
       setIsLoading(true);
       await Promise.all([
-        loadAdoptablePets(),
+        loadAdoptablePets(filters, 1, 50),
         loadPopularPets(),
         loadNearbyActivities(),
         fetchAdoptionFeed()
@@ -236,7 +409,7 @@ export const RealTimeDataProvider = ({ children }) => {
       setConnectionStatus('connecting');
       
       // 重新计算统计数据
-      const stats = calculateGlobalStats(adoptablePets);
+      const stats = calculateGlobalStats(adoptablePets, pagination.totalCount);
       setGlobalStats(stats);
       
       setConnectionStatus('connected');
@@ -256,11 +429,16 @@ export const RealTimeDataProvider = ({ children }) => {
     error,
     connectionStatus,
     filters,
-    activityFilter,
+    pagination,
+    crawlStatus,
     setFilters,
-    setActivityFilter,
     refreshData,
-    refreshStats
+    refreshStats,
+    loadMorePets,
+    resetAndLoadFirstPage,
+    searchPetsWithFilters,
+    triggerCrawl,
+    resetCrawlStatus
   };
 
   return (
