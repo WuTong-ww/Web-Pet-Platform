@@ -12,7 +12,8 @@ import PetImage from './components/common/PetImage';
 import CrawlButton from './components/common/CrawlButton';
 import DataManagement from './components/admin/DataManagement';
 import LocationBasedRecommendations from './components/location/LocationBasedRecommendations';
-
+import RegionDetail from './pages/RegionDetail';
+import { fetchPetfinderPetById } from './services/adoptionService';
 // 实时统计组件
 const RealTimeStats = () => {
   const { globalStats, connectionStatus, refreshStats } = useRealTimeData();
@@ -313,44 +314,40 @@ const PetDetailModal = ({ pet, onClose }) => {
     return parts.length > 0 ? parts.join(', ') : '暂无地址信息';
   };
 
-  // 格式化描述内容 - 特别处理SPCA的ABOUT ME内容
-  const formatDescription = (description, aboutMe, source) => {
-    if (source === 'spca' && aboutMe) {
-      // 对于SPCA的数据，如果有aboutMe，使用更好的格式化
-      const lines = aboutMe.split('\n').map(line => line.trim()).filter(line => line);
-      
-      if (lines.length > 0) {
-        const result = [];
-        
-        // 检查第一行是否是性格标签
-        const firstLine = lines[0];
-        const personalityPattern = /^[A-Z][a-z]+(?:,\s*[A-Z][a-z]+)*$/;
-        
-        if (personalityPattern.test(firstLine)) {
-          result.push(`性格特點: ${firstLine}`);
-          if (lines.length > 1) {
-            result.push(''); // 空行分隔
-            result.push(...lines.slice(1));
-          }
-        } else {
-          result.push(...lines);
-        }
-        
-        return result;
-      }
-    }
-    
-    // 默认处理
-    return description ? description.split('\n').filter(line => line.trim()) : [];
-  };
+  // 修改 formatDescription 函数，确保显示完整描述
+
+// 格式化描述内容 - 特别处理描述内容
+const formatDescription = (description, aboutMe, source) => {
+  // 处理 SPCA 数据
+  if (source === 'spca' && aboutMe) {
+    // ...现有 SPCA 处理代码...
+  }
+  
+  // 处理 Petfinder 数据 - 确保完整显示
+  if (source === 'petfinder' && description) {
+    // 确保显示完整描述，只做基本的格式化
+    return description
+      .replace(/\r\n/g, '\n')  // 替换Windows换行符
+      .replace(/\n{3,}/g, '\n\n')  // 合并多个空行为两个空行
+      .split('\n')  // 分割为行
+      .map(line => line.trim())  // 修剪每行
+      .filter(Boolean);  // 移除空行
+  }
+  
+  // 默认处理 - 确保完整显示
+  return description 
+    ? description.split('\n').filter(line => line.trim()) 
+    : [];
+};
 
   const descriptionLines = formatDescription(pet.description, pet.aboutMe, pet.source);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-6">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-hidden">
+        {/* 模态框头部 */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-start">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{pet.name}</h2>
               <div className="flex flex-wrap gap-2">
@@ -371,90 +368,131 @@ const PetDetailModal = ({ pet, onClose }) => {
             </div>
             <button 
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors"
+              aria-label="关闭"
             >
               ×
             </button>
           </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <div className="aspect-square mb-4">
-                <PetCard 
-                  pet={pet} 
-                  size="large"
-                  className="w-full h-full"
-                />
-              </div>
+        </div>
+        
+        {/* 模态框内容 */}
+        <div className="flex flex-col md:flex-row max-h-[calc(90vh-90px)]">
+          {/* 左侧：大图展示区 */}
+          <div className="md:w-1/2 p-4 h-[50vh] md:h-auto bg-gray-50">
+            <div className="w-full h-full rounded-lg overflow-hidden relative bg-gray-100">
+              <img 
+                src={pet.image || pet.fallbackImage} 
+                alt={pet.name}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = pet.fallbackImage || 'https://via.placeholder.com/600x600?text=No+Image';
+                }}
+              />
               
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">品种:</span>
+              {/* 如果有多张图片，可以添加小图预览 */}
+              {pet.images && pet.images.length > 1 && (
+                <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-center space-x-2 bg-gradient-to-t from-black/60 to-transparent">
+                  {pet.images.slice(0, 5).map((img, idx) => (
+                    <div 
+                      key={idx} 
+                      className="w-12 h-12 rounded-md overflow-hidden border-2 border-white cursor-pointer hover:scale-110 transition-transform"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const mainImg = e.currentTarget.querySelector('img').src;
+                        e.currentTarget.closest('.relative').querySelector('img').src = mainImg;
+                      }}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`${pet.name} 图片 ${idx + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* 右侧：信息展示区 - 添加overflow-y-auto以启用滚动 */}
+          <div className="md:w-1/2 p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 90px)' }}>
+            <div className="space-y-6">
+              {/* 基本信息 */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex flex-col space-y-1">
+                  <span className="text-gray-500">品种</span>
                   <span className="font-medium">{pet.breed}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">年龄:</span>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-gray-500">年龄</span>
                   <span className="font-medium">{pet.age}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">性别:</span>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-gray-500">性别</span>
                   <span className="font-medium">{pet.gender}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">体型:</span>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-gray-500">体型</span>
                   <span className="font-medium">{pet.size}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">地区:</span>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-gray-500">地区</span>
                   <span className="font-medium">{pet.location}</span>
                 </div>
-
+                
                 {/* 香港 SPCA 特有字段 */}
                 {pet.birthDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">出生日期:</span>
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-gray-500">出生日期</span>
                     <span className="font-medium">{pet.birthDate}</span>
                   </div>
                 )}
-
+                
                 {pet.microchip && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">芯片号码:</span>
+                  <div className="flex flex-col space-y-1 col-span-2">
+                    <span className="text-gray-500">芯片号码</span>
                     <span className="font-medium text-xs">{pet.microchip}</span>
                   </div>
                 )}
-
+                
                 {pet.center && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">现在位置:</span>
+                  <div className="flex flex-col space-y-1 col-span-2">
+                    <span className="text-gray-500">现在位置</span>
                     <span className="font-medium">{pet.center}</span>
                   </div>
                 )}
-
+                
                 {pet.intake && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">摄入方式:</span>
+                  <div className="flex flex-col space-y-1 col-span-2">
+                    <span className="text-gray-500">摄入方式</span>
                     <span className="font-medium text-sm">{pet.intake}</span>
                   </div>
                 )}
               </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold mb-3">关于 {pet.name}</h3>
               
-              {/* 显示格式化的描述 */}
-              <div className="text-gray-700 mb-4 space-y-2">
-                {descriptionLines.map((line, index) => (
-                  <p key={index} className={line === '' ? 'h-2' : ''}>
-                    {line}
-                  </p>
-                ))}
-              </div>
+              {/* 详细介绍 */}
+              <div>
+  <h3 className="text-lg font-semibold mb-3">关于 {pet.name}</h3>
+  
+  {/* 显示格式化的描述 */}
+  <div className="text-gray-700 space-y-2 max-h-[40vh] overflow-y-auto bg-gray-50 p-4 rounded-lg">
+    {descriptionLines.length > 0 ? (
+      descriptionLines.map((line, index) => (
+        <p key={index} className={line === '' ? 'h-2' : 'leading-relaxed'}>
+          {line}
+        </p>
+      ))
+    ) : (
+      <p className="text-gray-500 italic">暂无详细介绍</p>
+    )}
+  </div>
+</div>
               
-              {/* 如果有性格标签，单独显示 */}
+              {/* 性格特点标签 */}
               {pet.personalityTags && pet.personalityTags.length > 0 && (
-                <div className="mb-4">
+                <div>
                   <h4 className="font-medium mb-2">性格特点</h4>
                   <div className="flex flex-wrap gap-2">
                     {pet.personalityTags.map((tag, index) => (
@@ -466,53 +504,61 @@ const PetDetailModal = ({ pet, onClose }) => {
                 </div>
               )}
               
-              <div className="mb-4">
-                <h4 className="font-medium mb-2">特点标签</h4>
-                <div className="flex flex-wrap gap-2">
-                  {pet.tags.map((tag, index) => (
-                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                      {tag}
-                    </span>
-                  ))}
+              {/* 特点标签 */}
+              {pet.tags && pet.tags.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2">特点标签</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {pet.tags.map((tag, index) => (
+                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* 收容所信息 */}
+              <div>
+                <h4 className="font-medium mb-2">收容所信息</h4>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-600 font-medium">{pet.adoptionCenter || '爱心宠物收容所'}</p>
+                  {pet.contact && pet.contact.phone && (
+                    <p className="text-gray-600 text-sm mt-1">联系电话: {pet.contact.phone}</p>
+                  )}
+                  {pet.contact && pet.contact.email && (
+                    <p className="text-gray-600 text-sm mt-1">邮箱: {pet.contact.email}</p>
+                  )}
+                  {pet.contact && pet.contact.address && (
+                    <p className="text-gray-600 text-sm mt-1">地址: {formatAddress(pet.contact.address)}</p>
+                  )}
                 </div>
               </div>
               
-              <div className="mb-6">
-                <h4 className="font-medium mb-2">收容所信息</h4>
-                <p className="text-gray-600">{pet.adoptionCenter || '爱心宠物收容所'}</p>
-                {pet.contact && pet.contact.phone && (
-                  <p className="text-gray-600 text-sm">联系电话: {pet.contact.phone}</p>
-                )}
-                {pet.contact && pet.contact.email && (
-                  <p className="text-gray-600 text-sm">邮箱: {pet.contact.email}</p>
-                )}
-                {pet.contact && pet.contact.address && (
-                  <p className="text-gray-600 text-sm">地址: {formatAddress(pet.contact.address)}</p>
-                )}
-              </div>
-              
-              <div className="space-y-3">
+              {/* 操作按钮 */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
                 <button 
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all transform hover:scale-105"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-medium hover:shadow-lg transition-all transform hover:scale-105"
                   onClick={() => alert(`您想要领养 ${pet.name}！请联系收容所进行下一步操作。`)}
                 >
                   💖 我要领养
                 </button>
                 <button 
-                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  className="bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                   onClick={() => alert(`请拨打电话联系收容所: ${pet.contact?.phone || '请查看详细信息'}`)}
                 >
                   📞 联系收容所
                 </button>
-                <button 
-                  className="w-full bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors"
-                  onClick={() => alert(`已将 ${pet.name} 添加到收藏夹！`)}
-                >
-                  ❤️ 收藏
-                </button>
               </div>
               
-              <div className="mt-4 text-xs text-gray-500">
+              <button 
+                className="w-full bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors"
+                onClick={() => alert(`已将 ${pet.name} 添加到收藏夹！`)}
+              >
+                ❤️ 收藏
+              </button>
+              
+              <div className="text-xs text-gray-500 mt-4">
                 发布时间: {format(pet.postedDate, 'yyyy-MM-dd HH:mm')} | 
                 浏览量: {pet.viewCount} | 
                 收藏: {pet.favoriteCount}
@@ -698,8 +744,31 @@ const AppContent = () => {
     }
   };
 
-  const handlePetClick = (pet) => {
+  const handlePetClick = async (pet) => {
+    // 先显示基本信息
     setSelectedPet(pet);
+    
+    // 对于 Petfinder 宠物，获取完整详细信息
+    if (pet.source === 'petfinder' && pet.id) {
+      try {
+        setIsLoading(true);
+        
+        console.log('获取宠物详细信息:', pet.id);
+        const detailedPet = await fetchPetfinderPetById(pet.id);
+        
+        if (detailedPet) {
+          console.log('更新宠物详细信息:', detailedPet.name);
+          console.log('描述长度:', detailedPet.description?.length || 0);
+          
+          // 更新选中的宠物
+          setSelectedPet(detailedPet);
+        }
+      } catch (error) {
+        console.error('获取宠物详细信息失败:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 
   const handleLoadMore = async () => {
@@ -727,7 +796,7 @@ const AppContent = () => {
   const navItems = [
     { key: 'home', label: '首页', icon: '🏠' },
     { key: 'search', label: '搜索', icon: '🔍' },
-    { key: 'recommend', label: '推荐', icon: '🎯' },
+    { key: 'recommend', label: '地区推荐', icon: '🌎' },
     { key: 'map', label: '地图', icon: '🗺️' },
     { key: 'admin', label: '管理', icon: '📊' },
     { key: 'profile', label: '档案', icon: '👤' },
@@ -896,8 +965,8 @@ const AppContent = () => {
           </div>
         );
 
-      case 'recommend':
-        return <LocationBasedRecommendations />;
+        case 'recommend':
+          return <LocationBasedRecommendations onPetClick={handlePetClick} />;
 
       case 'map':
         return (

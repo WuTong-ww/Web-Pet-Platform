@@ -127,51 +127,39 @@ const generateFallbackImage = (emoji, name = 'Pet', subtitle = 'Loading...') => 
   };
 
 /**
- * 获取 Petfinder API 访问令牌
+ * 获取 Petfinder API 访问令牌 - 通过后端代理
  */
 const getAccessToken = async () => {
   try {
-    if (!checkAPIConfig()) {
-      throw new Error('API configuration missing');
-    }
-
+    // 检查缓存中是否有有效令牌
     if (accessToken && tokenExpiresAt && Date.now() < tokenExpiresAt) {
       return accessToken;
     }
 
     console.log('正在获取 Petfinder API 访问令牌...');
     
-    const formData = new FormData();
-    formData.append('grant_type', 'client_credentials');
-    formData.append('client_id', PETFINDER_API_CONFIG.clientId);
-    formData.append('client_secret', PETFINDER_API_CONFIG.clientSecret);
-
-    const response = await axios.post(
-      `${PETFINDER_API_CONFIG.baseURL}${PETFINDER_API_CONFIG.tokenUrl}`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      }
-    );
-
-    const { access_token, expires_in } = response.data;
+    // 通过后端代理获取令牌
+    const response = await localAPI.post('/api/petfinder/token');
     
-    accessToken = access_token;
-    tokenExpiresAt = Date.now() + (expires_in * 1000) - 300000;
-    
-    console.log('成功获取 Petfinder API 访问令牌');
-    return accessToken;
+    if (response.data && response.data.access_token) {
+      const { access_token, expires_in } = response.data;
+      
+      accessToken = access_token;
+      tokenExpiresAt = Date.now() + (expires_in * 1000) - 300000; // 提前5分钟过期
+      
+      console.log('成功获取 Petfinder API 访问令牌');
+      return accessToken;
+    } else {
+      throw new Error('未收到有效令牌');
+    }
   } catch (error) {
     console.error('获取 Petfinder API 访问令牌失败:', error);
     
     if (error.code === 'ERR_NETWORK' || error.message.includes('CORS')) {
-      console.warn('检测到 CORS 错误，这在开发环境中很常见。将使用模拟数据。');
-      throw new Error('CORS_ERROR');
+      console.warn('检测到 CORS 或网络错误，这在开发环境中很常见。将使用模拟数据。');
     }
     
-    throw new Error('Failed to get Petfinder API access token');
+    throw error;
   }
 };
 
@@ -217,64 +205,134 @@ petfinderAPI.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 /**
- * 转换 Petfinder API 数据格式
+ * 转换 Petfinder API 返回的宠物数据格式
+ * @param {Object} animal - Petfinder API返回的单个宠物数据
+ * @returns {Object} - 转换后的标准格式宠物数据
  */
 const transformPetfinderAnimal = (animal) => {
-  const emoji = getAnimalEmoji(animal.type);
-  const fallbackImage = generateFallbackImage(emoji, animal.name, 'Photo loading...');
-
-  let primaryPhoto = fallbackImage;
+  if (!animal) return null;
   
-  if (animal.photos && animal.photos.length > 0) {
-    primaryPhoto = animal.photos[0].medium || animal.photos[0].large || animal.photos[0].full || fallbackImage;
+  // 直接使用完整的原始描述，不做任何截断
+  let description = '';
+  
+  // 检查 description 字段是否存在且不为空
+  if (animal.description && animal.description.trim() !== '') {
+    // 完整保留原始描述，不截断或修改
+    description = animal.description;
+    console.log(`描述长度: ${description.length}字符`);
   }
-
+  
+  // 如果没有描述，才尝试从其他属性构建一个描述
+  if (!description || description.trim() === '') {
+    const traits = [];
+    
+    if (animal.attributes?.spayed_neutered) traits.push('已绝育');
+    if (animal.attributes?.house_trained) traits.push('已家庭训练');
+    if (animal.attributes?.declawed) traits.push('已除爪');
+    if (animal.attributes?.special_needs) traits.push('需特殊照顾');
+    if (animal.attributes?.shots_current) traits.push('疫苗已接种');
+    
+    let builtDescription = `${animal.name} 是一只${animal.age || ''}${animal.gender ? ' ' + animal.gender : ''}的${animal.breeds?.primary || '未知品种'}`;
+    
+    if (traits.length > 0) {
+      builtDescription += `\n\n特点：${traits.join('、')}`;
+    }
+    
+    // 环境适应性
+    const environments = [];
+    if (animal.environment?.children === true) environments.push('适合有孩子的家庭');
+    if (animal.environment?.dogs === true) environments.push('可以和狗相处');
+    if (animal.environment?.cats === true) environments.push('可以和猫相处');
+    
+    if (environments.length > 0) {
+      builtDescription += `\n\n环境适应性：${environments.join('、')}`;
+    }
+    
+    // 添加联系信息
+    builtDescription += `\n\n如果您有兴趣领养${animal.name}，请联系收容所了解更多信息。`;
+    
+    description = builtDescription;
+  }
+  
+  // 构建标签
+  const tags = [];
+  
+  // 从品种添加标签
+  if (animal.breeds?.primary) tags.push(animal.breeds.primary);
+  if (animal.breeds?.secondary) tags.push(animal.breeds.secondary);
+  
+  // 从年龄和性别添加标签
+  if (animal.age) tags.push(animal.age);
+  if (animal.gender) tags.push(animal.gender);
+  
+  // 从颜色添加标签
+  if (animal.colors?.primary) tags.push(animal.colors.primary);
+  
+  // 从环境偏好添加标签
+  if (animal.environment?.children === true) tags.push('适合有孩子的家庭');
+  if (animal.environment?.dogs === true) tags.push('喜欢狗');
+  if (animal.environment?.cats === true) tags.push('喜欢猫');
+  
+  // 从特征添加标签
+  if (animal.attributes?.spayed_neutered) tags.push('已绝育');
+  if (animal.attributes?.house_trained) tags.push('已家庭训练');
+  
+  // 确保返回的标签不重复且不为空
+  const uniqueTags = [...new Set(tags)].filter(tag => tag);
+  
+  // 格式化联系方式
+  const contact = {
+    email: animal.contact?.email || null,
+    phone: animal.contact?.phone || null,
+    address: animal.contact?.address || null
+  };
+  
+  // 获取主图片
+  const image = animal.photos && animal.photos.length > 0 
+    ? animal.photos[0].medium || animal.photos[0].small || animal.photos[0].large 
+    : null;
+  
+  // 获取所有图片
+  const images = animal.photos && animal.photos.length > 0 
+    ? animal.photos.map(photo => photo.medium || photo.small || photo.large)
+    : [];
+  
+  // 从标签中提取性格特点
+  const personalityTags = animal.tags || [];
+  
+  // 返回标准化的宠物数据
   return {
-    id: `petfinder_${animal.id}`,
-    originalId: animal.id,
-    name: animal.name,
-    breed: animal.breeds.primary + (animal.breeds.secondary ? ` / ${animal.breeds.secondary}` : ''),
-    age: animal.age,
-    size: animal.size,
-    gender: animal.gender,
-    type: animal.type,
-    location: animal.contact?.address ? 
-      `${animal.contact.address.city}, ${animal.contact.address.state}` : 
-      '未知地区',
-    image: primaryPhoto,
-    fallbackImage,
-    emoji,
-    description: animal.description || `${animal.name} is looking for a loving home!`,
-    tags: animal.tags || [],
+    id: animal.id,
+    name: animal.name || '未命名宠物',
+    type: animal.type || '未知类型',
+    breed: animal.breeds?.primary || '未知品种',
+    age: animal.age || '未知年龄',
+    gender: animal.gender || '未知性别',
+    size: animal.size || '未知大小',
+    description: description,
+    // 保存原始描述，便于调试
+    rawDescription: animal.description || '',
+    location: animal.contact?.address?.city 
+      ? `${animal.contact.address.city}, ${animal.contact.address.state || ''}`
+      : (animal.organization_id || '未知地区'),
+    image: image,
+    images: images,
+    fallbackImage: 'https://via.placeholder.com/300x300?text=No+Image',
+    url: animal.url,
     status: animal.status,
-    healthStatus: animal.attributes?.shots_current ? '已接种疫苗' : '健康状况待确认',
-    vaccinated: animal.attributes?.shots_current || false,
-    spayed: animal.attributes?.spayed_neutered || false,
-    houseTrained: animal.attributes?.house_trained || false,
-    specialNeeds: animal.attributes?.special_needs || false,
-    goodWithChildren: animal.environment?.children || false,
-    goodWithDogs: animal.environment?.dogs || false,
-    goodWithCats: animal.environment?.cats || false,
-    contact: {
-      email: animal.contact?.email,
-      phone: animal.contact?.phone,
-      address: animal.contact?.address
-    },
-    organization: {
-      id: animal.organization_id,
-      url: animal.url
-    },
-    photos: animal.photos || [],
-    videos: animal.videos || [],
-    publishedAt: animal.published_at,
-    popularity: Math.floor(Math.random() * 100) + 1,
-    viewCount: Math.floor(Math.random() * 1000) + 100,
-    favoriteCount: Math.floor(Math.random() * 200) + 50,
-    adoptionCenter: '通过 Petfinder',
-    postedDate: new Date(animal.published_at),
-    source: 'petfinder'
+    published_at: animal.published_at,
+    tags: uniqueTags.slice(0, 6), // 限制标签数量
+    personalityTags: personalityTags,
+    contact: contact,
+    adoptionCenter: animal.organization || animal.organization_id || 'Petfinder',
+    viewCount: Math.floor(Math.random() * 200) + 50, // 模拟数据
+    favoriteCount: Math.floor(Math.random() * 30) + 5, // 模拟数据
+    popularity: Math.floor(Math.random() * 100), // 模拟数据
+    source: 'petfinder',
+    postedDate: animal.published_at ? new Date(animal.published_at) : new Date(),
+    // 添加额外属性，帮助调试
+    descriptionLength: animal.description ? animal.description.length : 0
   };
 };
 
@@ -736,17 +794,22 @@ export const fetchAdoptablePets = async (filters = {}, page = 1, limit = 50) => 
 };
 
 /**
- * 获取 Petfinder 数据
+ * 获取 Petfinder 数据 - 通过后端代理
  */
 const fetchPetfinderPets = async (filters = {}, page = 1, limit = 20) => {
   try {
     console.log('正在从 Petfinder API 获取数据...');
     
+    // 获取访问令牌
+    const token = await getAccessToken();
+    
+    // 准备查询参数
     const params = {
       status: 'adoptable',
       limit: limit,
       page: page,
-      sort: 'recent'
+      sort: 'recent',
+      token: token // 添加令牌作为参数
     };
 
     // 添加筛选条件
@@ -769,11 +832,12 @@ const fetchPetfinderPets = async (filters = {}, page = 1, limit = 20) => {
       params.location = filters.location;
     }
 
-    const response = await petfinderAPI.get(PETFINDER_API_CONFIG.animalsUrl, { params });
+    // 通过后端代理发送请求
+    const response = await localAPI.get('/api/petfinder/animals', { params });
     
-    console.log('成功获取 Petfinder API 数据:', response.data.animals.length, '条记录');
+    console.log('成功获取 Petfinder API 数据:', response.data.animals?.length || 0, '条记录');
     
-    const pets = response.data.animals.map(transformPetfinderAnimal);
+    const pets = response.data.animals?.map(transformPetfinderAnimal) || [];
     
     return pets;
   } catch (error) {
@@ -988,6 +1052,89 @@ export const searchPets = async (query, filters = {}, page = 1, limit = 50) => {
         hasPreviousPage: false
       }
     };
+  }
+};
+
+/**
+ * 获取首页展示宠物数据 - 仅使用Petfinder作为数据源以确保稳定性
+ */
+export const fetchHomePagePets = async (limit = 50) => {
+  try {
+    console.log('正在获取首页宠物数据，使用Petfinder API...');
+    
+    // 只从Petfinder获取数据
+    const petfinderPets = await fetchPetfinderPets({}, 1, limit);
+    
+    if (petfinderPets.length === 0) {
+      // 如果Petfinder没有数据，使用备用模拟数据
+      console.log('⚠️ Petfinder数据为空，使用模拟数据...');
+      return generateMockPets(limit);
+    }
+    
+    console.log(`✅ 成功获取首页数据: ${petfinderPets.length}只宠物`);
+    return petfinderPets;
+  } catch (error) {
+    console.error('❌ 获取首页宠物数据失败:', error);
+    console.log('使用模拟数据作为备用...');
+    return generateMockPets(limit);
+  }
+};
+
+/**
+ * 按地区获取宠物数据
+ */
+export const fetchPetsByRegion = async (region, limit = 20) => {
+  try {
+    console.log(`正在获取${region}地区的宠物数据...`);
+    
+    if (region.toLowerCase() === 'hong kong' || region.toLowerCase() === '香港') {
+      // 香港地区 - 使用SPCA爬取数据
+      const spcaData = await fetchSpcaData();
+      return spcaData.slice(0, limit);
+    } else {
+      // 其他地区 - 使用Petfinder筛选
+      const params = {
+        location: region,
+        distance: 100, // 100英里范围内
+        limit: limit
+      };
+      
+      return await fetchPetfinderPets(params, 1, limit);
+    }
+  } catch (error) {
+    console.error(`❌ 获取${region}地区宠物数据失败:`, error);
+    // 返回模拟数据作为备用
+    return generateMockPets(limit).map(pet => {
+      pet.location = region;
+      return pet;
+    });
+  }
+};
+
+/**
+ * 获取单个宠物的详细信息
+ * @param {string} id - 宠物ID
+ * @returns {Promise<Object>} - 宠物详细信息
+ */
+export const fetchPetfinderPetById = async (id) => {
+  try {
+    // 获取访问令牌
+    const token = await getAccessToken();
+    
+    // 通过后端代理获取详细信息
+    const response = await localAPI.get(`/api/petfinder/animal/${id}`, {
+      params: { token }
+    });
+    
+    if (response.data && response.data.animal) {
+      console.log('获取到宠物详细信息:', response.data.animal);
+      return transformPetfinderAnimal(response.data.animal);
+    }
+    
+    throw new Error('未找到宠物信息');
+  } catch (error) {
+    console.error(`获取宠物ID: ${id} 详细信息失败:`, error);
+    return null;
   }
 };
 
