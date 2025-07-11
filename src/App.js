@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import clsx from 'clsx';
+import { formatDescriptionToParagraphs, formatSPCAAboutMe } from './utils/textUtils';
 
 // 导入各个组件
 import { RealTimeDataProvider, useRealTimeData } from './contexts/RealTimeDataContext';
@@ -316,27 +317,22 @@ const PetDetailModal = ({ pet, onClose }) => {
 
   // 修改 formatDescription 函数，确保显示完整描述
 
-// 格式化描述内容 - 特别处理描述内容
+// 格式化描述内容 - 使用 textUtils 确保完整显示
 const formatDescription = (description, aboutMe, source) => {
   // 处理 SPCA 数据
   if (source === 'spca' && aboutMe) {
-    // ...现有 SPCA 处理代码...
+    const formattedAboutMe = formatSPCAAboutMe(aboutMe);
+    return formatDescriptionToParagraphs(formattedAboutMe);
   }
   
   // 处理 Petfinder 数据 - 确保完整显示
   if (source === 'petfinder' && description) {
-    // 确保显示完整描述，只做基本的格式化
-    return description
-      .replace(/\r\n/g, '\n')  // 替换Windows换行符
-      .replace(/\n{3,}/g, '\n\n')  // 合并多个空行为两个空行
-      .split('\n')  // 分割为行
-      .map(line => line.trim())  // 修剪每行
-      .filter(Boolean);  // 移除空行
+    return formatDescriptionToParagraphs(description);
   }
   
   // 默认处理 - 确保完整显示
   return description 
-    ? description.split('\n').filter(line => line.trim()) 
+    ? formatDescriptionToParagraphs(description)
     : [];
 };
 

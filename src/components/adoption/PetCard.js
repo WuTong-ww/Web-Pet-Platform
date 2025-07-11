@@ -1,5 +1,6 @@
 // ✅ 文件：src/components/PetCard.js
 import React from "react";
+import { truncateText } from "../../utils/textUtils";
 
 export default function PetCard({ pet }) {
   const {
@@ -59,7 +60,7 @@ export default function PetCard({ pet }) {
 
       {description && (
         <p style={{ fontSize: "0.85rem", color: "#555", margin: "6px 0" }}>
-          {description.slice(0, 60)}...
+          {truncateText(description, 80)}
         </p>
       )}
 
@@ -76,7 +77,7 @@ export default function PetCard({ pet }) {
 
       {source && (
         <div style={{ marginTop: "6px", fontSize: "0.75rem", color: "#888", fontStyle: "italic" }}>
-          来自：{source === "szadopt" ? "领养之家" : "Petfinder"}
+          来自：{source === "szadopt" ? "领养之家" : source === "spca" ? "香港愛護動物協會" : "Petfinder"}
         </div>
       )}
     </div>

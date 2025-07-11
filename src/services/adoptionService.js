@@ -1,4 +1,11 @@
 import axios from 'axios';
+import { 
+  validateDescription, 
+  formatDescriptionToParagraphs, 
+  generateSafeSVGDataURL,
+  formatSPCAAboutMe,
+  safeCleanText
+} from '../utils/textUtils';
 
 // Petfinder API 配置
 const PETFINDER_API_CONFIG = {
@@ -81,9 +88,11 @@ const getAnimalEmoji = (type) => {
 };
 
 /**
- * 安全的 Base64 编码函数
+ * 安全的 Base64 编码函数 - 已弃用，使用 textUtils 中的 safeUrlEncode
+ * @deprecated 使用 textUtils.safeUrlEncode 代替
  */
 const safeBase64Encode = (str) => {
+  console.warn('safeBase64Encode is deprecated, use textUtils.safeUrlEncode instead');
   try {
     // 首先将字符串转换为 UTF-8 字节
     const utf8Bytes = new TextEncoder().encode(str);
@@ -106,25 +115,12 @@ const safeBase64Encode = (str) => {
 };
 
 /**
- * 生成SVG格式的备用图片 - 使用 URL 编码替代 Base64
+ * 生成SVG格式的备用图片 - 使用安全的 URL 编码
  */
 const generateFallbackImage = (emoji, name = 'Pet', subtitle = 'Loading...') => {
-    // 清理和限制文本内容
-    const safeName = String(name).replace(/[<>&"']/g, '').substring(0, 10);
-    const safeSubtitle = String(subtitle).replace(/[<>&"']/g, '').substring(0, 15);
-    
-    const svgContent = `
-      <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
-        <rect width="400" height="400" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
-        <text x="200" y="160" font-family="Arial, sans-serif" font-size="120" text-anchor="middle" fill="#6c757d">${emoji}</text>
-        <text x="200" y="250" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#495057">${safeName}</text>
-        <text x="200" y="300" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#6c757d">${safeSubtitle}</text>
-      </svg>
-    `;
-    
-    // 使用 URL 编码替代 Base64
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
-  };
+  // 使用 textUtils 中的安全方法
+  return generateSafeSVGDataURL(emoji, name, subtitle);
+};
 
 /**
  * 获取 Petfinder API 访问令牌 - 通过后端代理
@@ -213,14 +209,14 @@ petfinderAPI.interceptors.response.use(
 const transformPetfinderAnimal = (animal) => {
   if (!animal) return null;
   
-  // 直接使用完整的原始描述，不做任何截断
+  // 使用新的文本处理工具来处理描述
   let description = '';
   
   // 检查 description 字段是否存在且不为空
   if (animal.description && animal.description.trim() !== '') {
-    // 完整保留原始描述，不截断或修改
-    description = animal.description;
-    console.log(`描述长度: ${description.length}字符`);
+    // 使用 textUtils 验证和清理描述，确保完整保留
+    description = validateDescription(animal.description);
+    console.log(`宠物 ${animal.name} 描述长度: ${description.length}字符`);
   }
   
   // 如果没有描述，才尝试从其他属性构建一个描述
@@ -310,7 +306,7 @@ const transformPetfinderAnimal = (animal) => {
     age: animal.age || '未知年龄',
     gender: animal.gender || '未知性别',
     size: animal.size || '未知大小',
-    description: description,
+    description: description, // 使用完整的处理后描述
     // 保存原始描述，便于调试
     rawDescription: animal.description || '',
     location: animal.contact?.address?.city 
@@ -332,7 +328,8 @@ const transformPetfinderAnimal = (animal) => {
     source: 'petfinder',
     postedDate: animal.published_at ? new Date(animal.published_at) : new Date(),
     // 添加额外属性，帮助调试
-    descriptionLength: animal.description ? animal.description.length : 0
+    descriptionLength: description.length,
+    originalDescriptionLength: animal.description ? animal.description.length : 0
   };
 };
 
@@ -358,39 +355,16 @@ const transformSpcaData = (pet) => {
     genderDisplay += '(已絕育)';
   }
 
-  // 使用完整的描述信息
+  // 使用 textUtils 处理完整的描述信息
   let fullDescription = '';
   
   if (pet.aboutMe || pet.originalAboutMe) {
-    // 使用原始的 ABOUT ME 内容
+    // 使用新的文本处理工具
     const aboutMeContent = pet.aboutMe || pet.originalAboutMe;
-    
-    // 分离性格标签行和描述段落
-    const lines = aboutMeContent.split('\n').map(line => line.trim()).filter(line => line);
-    
-    if (lines.length > 0) {
-      // 第一行通常是性格标签
-      const firstLine = lines[0];
-      const personalityPattern = /^[A-Z][a-z]+(?:,\s*[A-Z][a-z]+)*$/;
-      
-      if (personalityPattern.test(firstLine)) {
-        // 如果第一行是性格标签，将其格式化
-        fullDescription = `性格特點: ${firstLine}\n\n`;
-        
-        // 添加剩余的描述段落
-        if (lines.length > 1) {
-          fullDescription += lines.slice(1).join('\n');
-        }
-      } else {
-        // 如果第一行不是标准的性格标签格式，直接使用完整内容
-        fullDescription = aboutMeContent;
-      }
-    } else {
-      fullDescription = aboutMeContent;
-    }
+    fullDescription = formatSPCAAboutMe(aboutMeContent);
   } else {
     // 使用现有描述或生成默认描述
-    fullDescription = pet.description || `${pet.name}正在香港愛護動物協會等待領養`;
+    fullDescription = validateDescription(pet.description) || `${pet.name}正在香港愛護動物協會等待領養`;
   }
 
   // 添加基本信息到描述中
@@ -422,7 +396,7 @@ const transformSpcaData = (pet) => {
     images: pet.images || (pet.image ? [pet.image] : []),
     fallbackImage,
     emoji,
-    description: fullDescription, // 使用完整的描述
+    description: fullDescription, // 使用完整的处理后描述
     tags: pet.tags || [...(pet.personalityTags || []), '待領養', 'SPCA'],
     status: pet.status || 'adoptable',
     healthStatus: pet.health || '健康',
@@ -459,7 +433,10 @@ const transformSpcaData = (pet) => {
     personalityTags: pet.personalityTags || [],
     center: pet.center,
     intake: pet.intake,
-    aboutMe: pet.aboutMe || pet.originalAboutMe // 保留原始 ABOUT ME 内容
+    aboutMe: pet.aboutMe || pet.originalAboutMe, // 保留原始 ABOUT ME 内容
+    // 添加描述长度统计
+    descriptionLength: fullDescription.length,
+    originalAboutMeLength: (pet.aboutMe || pet.originalAboutMe)?.length || 0
   };
 };
 
