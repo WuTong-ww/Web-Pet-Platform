@@ -4,7 +4,7 @@ const PetImage = ({
   pet, 
   className = '', 
   size = 'medium',
-  showFallback = true 
+  showFallback = true
 }) => {
   const [imageSrc, setImageSrc] = useState(pet.image);
   const [imageError, setImageError] = useState(false);
@@ -257,21 +257,14 @@ const PetImage = ({
         </div>
       )}
       
-      {/* 图片来源标识 - 增加调试信息 */}
+      {/* 图片来源标识 - 只在SPCA且成功加载时显示 */}
       {pet.source === 'spca' && !isLoading && !imageError && (
         <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
           SPCA {retryCount > 0 ? `(备用${retryCount})` : ''}
         </div>
       )}
       
-      {/* 调试信息 - 开发环境下显示 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded max-w-xs">
-          <div>ID: {pet.id}</div>
-          <div>重试: {retryCount}/3</div>
-          <div className="truncate">URL: {imageSrc.substring(0, 30)}...</div>
-        </div>
-      )}
+      {/* 完全移除调试信息显示 */}
     </div>
   );
 };
