@@ -6,12 +6,52 @@ const PetImage = ({
   size = 'medium',
   showFallback = true
 }) => {
-  const [imageSrc, setImageSrc] = useState(pet.image);
+  // 清理和验证初始图片URL - 增强版本
+  const cleanInitialImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    
+    let cleanUrl = url.trim();
+    
+    // 如果已经是代理URL，直接使用
+    if (cleanUrl.includes('/proxy/image?url=')) {
+      console.log(`🌐 检测到代理URL: ${cleanUrl}`);
+      return cleanUrl;
+    }
+    
+    // 修复SPCA URL中的重复域名问题
+    cleanUrl = cleanUrl.replace(/https:\/\/www\.spca\.org\.hk\/+\/www\.spca\.org\.hk/g, 'https://www.spca.org.hk');
+    cleanUrl = cleanUrl.replace(/www\.spca\.org\.hk\/+\/www\.spca\.org\.hk/g, 'www.spca.org.hk');
+    cleanUrl = cleanUrl.replace(/spca\.org\.hk\/+\/www\.spca\.org\.hk/g, 'spca.org.hk');
+    
+    // 清理多余的斜杠
+    cleanUrl = cleanUrl.replace(/([^:]\/)\/+/g, '$1');
+    
+    // 确保URL格式正确
+    if (cleanUrl.startsWith('//www.spca.org.hk')) {
+      cleanUrl = 'https:' + cleanUrl;
+    } else if (cleanUrl.startsWith('/www.spca.org.hk')) {
+      cleanUrl = 'https:/' + cleanUrl;
+    } else if (cleanUrl.startsWith('www.spca.org.hk') && !cleanUrl.startsWith('http')) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
+    
+    // 如果是SPCA图片，使用代理
+    if (cleanUrl.includes('www.spca.org.hk')) {
+      const proxyUrl = `http://localhost:8080/proxy/image?url=${encodeURIComponent(cleanUrl)}`;
+      console.log(`🔄 转换为代理URL: ${cleanUrl} -> ${proxyUrl}`);
+      return proxyUrl;
+    }
+    
+    console.log(`🔧 清理图片URL: ${url} -> ${cleanUrl}`);
+    return cleanUrl;
+  };
+  
+  const cleanImageUrl = cleanInitialImageUrl(pet.image);
+  const [imageSrc, setImageSrc] = useState(cleanImageUrl);
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
 
-  // 生成高质量备用图片 - 使用可靠的图片源，修复类型错误
   const generateHighQualityFallback = () => {
     const petType = pet.type?.toLowerCase() || 'pet';
     const typeKeywords = {
@@ -25,21 +65,20 @@ const PetImage = ({
     
     const keyword = typeKeywords[petType] || 'pet';
     
-    // 使用可靠的Unsplash图片ID
     const reliableImageIds = {
       dog: [
-        '1552053831-71594a27632d', // 金毛
-        '1548199973-03cce0bbc87b', // 拉布拉多
-        '1601758228041-375435679ac4', // 小狗
-        '1587300003388-59208cc962cb', // 可爱小狗
-        '1583512603805-3cc6b41f3edb'  // 宠物狗
+        '1552053831-71594a27632d',
+        '1548199973-03cce0bbc87b',
+        '1601758228041-375435679ac4',
+        '1587300003388-59208cc962cb',
+        '1583512603805-3cc6b41f3edb'
       ],
       cat: [
-        '1574158622682-e40e69881006', // 猫咪
-        '1583337130070-e35b1b1a4fbe', // 可爱猫
-        '1592194996308-7b43878e84a6', // 小猫
-        '1606918801680-5e35c7e3e01a', // 宠物猫
-        '1513360371669-4adf3dd7dff8'  // 橘猫
+        '1574158622682-e40e69881006',
+        '1583337130070-e35b1b1a4fbe',
+        '1592194996308-7b43878e84a6',
+        '1606918801680-5e35c7e3e01a',
+        '1513360371669-4adf3dd7dff8'
       ],
       pet: [
         '1552053831-71594a27632d',
@@ -52,7 +91,6 @@ const PetImage = ({
     const imageIds = reliableImageIds[keyword] || reliableImageIds.pet;
     let seedIndex = 0;
     
-    // 修复类型错误 - 确保code转换为字符串
     if (pet.code) {
       const codeStr = String(pet.code);
       if (codeStr.length > 0) {
@@ -67,11 +105,9 @@ const PetImage = ({
     
     const selectedId = imageIds[seedIndex];
     
-    // 使用可靠的Unsplash图片
     return `https://images.unsplash.com/photo-${selectedId}?w=600&h=600&fit=crop&auto=format&q=80`;
   };
 
-  // 生成简单的SVG备用图片（作为最后备选）
   const generateSimpleFallback = () => {
     const safeName = String(pet.name || 'Pet').replace(/[<>&"']/g, '').substring(0, 10);
     const safeBreed = String(pet.breed || 'Unknown').replace(/[<>&"']/g, '').substring(0, 15);
@@ -95,11 +131,9 @@ const PetImage = ({
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
   };
 
-  // 生成替代备用图片
   const generateAlternativeFallback = () => {
     const petType = pet.type?.toLowerCase() || 'pet';
     
-    // 使用不同的图片源作为备用
     const alternativeImages = {
       dog: [
         '1583337130070-e35b1b1a4fbe',
@@ -134,32 +168,37 @@ const PetImage = ({
     console.log(`   宠物来源: ${pet.source}`);
     console.log(`   所有图片URLs: `, pet.images);
     
+    // 如果是代理URL失败，尝试其他代理URL或备用图片
     if (showFallback && retryCount < 3) {
       console.log(`🔄 图片加载失败，尝试备用方案 (${retryCount + 1}/3):`, pet.name);
       
       if (retryCount === 0) {
-        // 第一次失败，尝试其他图片
+        // 尝试其他图片（如果有的话）
         if (pet.images && Array.isArray(pet.images) && pet.images.length > 1) {
-          const currentIndex = pet.images.indexOf(imageSrc);
-          const nextIndex = (currentIndex + 1) % pet.images.length;
-          const nextImage = pet.images[nextIndex];
+          const cleanImages = pet.images.map(cleanInitialImageUrl).filter(Boolean);
+          const currentIndex = cleanImages.indexOf(imageSrc);
+          const nextIndex = (currentIndex + 1) % cleanImages.length;
+          const nextImage = cleanImages[nextIndex];
           
-          console.log(`   尝试下一张图片: ${nextImage}`);
-          setImageSrc(nextImage);
-          setRetryCount(1);
-          setImageError(false);
-          setIsLoading(true);
-        } else {
-          // 没有其他图片，使用高质量备用图片
-          const highQualityFallback = generateHighQualityFallback();
-          console.log(`   使用高质量备用图片: ${highQualityFallback}`);
-          setImageSrc(highQualityFallback);
-          setRetryCount(1);
-          setImageError(false);
-          setIsLoading(true);
+          if (nextImage && nextImage !== imageSrc) {
+            console.log(`   尝试下一张图片: ${nextImage}`);
+            setImageSrc(nextImage);
+            setRetryCount(1);
+            setImageError(false);
+            setIsLoading(true);
+            return;
+          }
         }
+        
+        // 使用高质量备用图片
+        const highQualityFallback = generateHighQualityFallback();
+        console.log(`   使用高质量备用图片: ${highQualityFallback}`);
+        setImageSrc(highQualityFallback);
+        setRetryCount(1);
+        setImageError(false);
+        setIsLoading(true);
       } else if (retryCount === 1) {
-        // 第二次失败，使用不同的备用图片
+        // 使用替代备用图片
         const alternativeFallback = generateAlternativeFallback();
         console.log(`   使用替代备用图片: ${alternativeFallback}`);
         setImageSrc(alternativeFallback);
@@ -167,9 +206,9 @@ const PetImage = ({
         setImageError(false);
         setIsLoading(true);
       } else if (retryCount === 2) {
-        // 第三次失败，使用SVG备用图片
+        // 使用SVG备用图片
         const svgFallback = generateSimpleFallback();
-        console.log(`   使用SVG备用图片: ${svgFallback.substring(0, 100)}...`);
+        console.log(`   使用SVG备用图片`);
         setImageSrc(svgFallback);
         setRetryCount(3);
         setImageError(false);
@@ -185,9 +224,7 @@ const PetImage = ({
     setIsLoading(true);
     setRetryCount(0);
     
-    // 尝试原始图片，如果失败会触发备用方案
     if (pet.images && pet.images.length > 1) {
-      // 如果有多张图片，尝试下一张
       const currentIndex = pet.images.indexOf(imageSrc);
       const nextIndex = (currentIndex + 1) % pet.images.length;
       setImageSrc(pet.images[nextIndex]);
@@ -197,9 +234,9 @@ const PetImage = ({
   };
 
   useEffect(() => {
-    // 重置状态当pet改变时
-    if (pet.image && pet.image !== imageSrc) {
-      setImageSrc(pet.image);
+    const newCleanUrl = cleanInitialImageUrl(pet.image);
+    if (newCleanUrl && newCleanUrl !== imageSrc) {
+      setImageSrc(newCleanUrl);
       setImageError(false);
       setIsLoading(true);
       setRetryCount(0);
@@ -208,12 +245,10 @@ const PetImage = ({
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      {/* 主要图片 - 添加crossOrigin属性 */}
       <img
         src={imageSrc}
         alt={pet.name}
-        crossOrigin="anonymous"
-        referrerPolicy="no-referrer"
+        // 移除crossOrigin和referrerPolicy，因为我们使用代理
         className={`w-full h-full object-cover transition-opacity duration-300 ${
           isLoading ? 'opacity-0' : 'opacity-100'
         }`}
@@ -225,7 +260,6 @@ const PetImage = ({
         }}
       />
       
-      {/* 加载中的占位符 */}
       {isLoading && !imageError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse">
           <div className="text-center">
@@ -240,7 +274,6 @@ const PetImage = ({
         </div>
       )}
       
-      {/* 错误状态显示 */}
       {imageError && !showFallback && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-center p-4">
@@ -256,15 +289,6 @@ const PetImage = ({
           </div>
         </div>
       )}
-      
-      {/* 图片来源标识 - 只在SPCA且成功加载时显示 */}
-      {pet.source === 'spca' && !isLoading && !imageError && (
-        <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-          SPCA {retryCount > 0 ? `(备用${retryCount})` : ''}
-        </div>
-      )}
-      
-      {/* 完全移除调试信息显示 */}
     </div>
   );
 };

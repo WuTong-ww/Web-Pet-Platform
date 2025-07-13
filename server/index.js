@@ -389,7 +389,7 @@ app.get("/api/petfinder/animal/:id", async (req, res) => {
       
       if (animal.description) {
         console.log(`📝 描述长度: ${animal.description.length} 字符`);
-        console.log(`📝 描述前100字符: ${animal.description.substring(0, 100)}...`);
+        console.log(`📝 描述前150字符: ${animal.description.substring(0, 150)}...`);
       } else {
         console.log("📝 宠物描述: 无");
       }

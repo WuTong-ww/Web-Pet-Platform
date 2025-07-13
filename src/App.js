@@ -296,7 +296,7 @@ const PetList = ({ pets, onPetClick, pagination, onLoadMore, onRefresh, isLoadin
   );
 };
 
-// 宠物详情模态框 - 改进描述显示
+// 宠物详情模态框 - 简化描述显示，保持原始内容
 const PetDetailModal = ({ pet, onClose }) => {
   if (!pet) return null;
 
@@ -314,23 +314,6 @@ const PetDetailModal = ({ pet, onClose }) => {
     if (address.postcode) parts.push(address.postcode);
     
     return parts.length > 0 ? parts.join(', ') : '暂无地址信息';
-  };
-
-  // 智能格式化描述内容
-  const formatDescriptionContent = (description, source) => {
-    if (!description) return [];
-    
-    const cleanDescription = typeof description === 'string' ? description.trim() : '';
-    if (!cleanDescription) return [];
-    
-    // 根据来源使用不同的处理策略
-    if (source === 'petfinder') {
-      return formatPetfinderDescription(cleanDescription);
-    } else if (source === 'spca') {
-      return formatSpcaDescription(cleanDescription);
-    } else {
-      return formatGenericDescription(cleanDescription);
-    }
   };
 
   // 格式化 Petfinder 描述
@@ -379,28 +362,65 @@ const PetDetailModal = ({ pet, onClose }) => {
     return sections.filter(section => section.length > 5);
   };
 
-  // 格式化 SPCA 描述
-  const formatSpcaDescription = (text) => {
-    return text.split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-  };
-
-  // 格式化通用描述
-  const formatGenericDescription = (text) => {
-    // 按句子分割，保持段落结构
-    const paragraphs = text.split('\n\n').filter(p => p.trim());
-    
-    if (paragraphs.length > 1) {
-      return paragraphs.map(p => p.trim());
+  // 简化描述处理 - 专门处理SPCA的完整描述
+  const formatDescriptionContent = (description, source, personalityTags) => {
+    if (!description) {
+      return [`${pet.name}正在寻找一个充满爱的家庭。`];
     }
     
-    // 如果没有明显的段落，按句子分割
-    const sentences = text.split(/[\.!?]+/).filter(s => s.trim().length > 10);
-    return sentences.map(s => s.trim() + '.');
+    const cleanDescription = typeof description === 'string' ? description.trim() : '';
+    if (!cleanDescription) return [`${pet.name}正在寻找一个充满爱的家庭。`];
+    
+    // 检查是否是不相关的内容
+    const excludePatterns = [
+      /training\s+courses?\s+for\s+licensed\s+dog\s+breeders?/i,
+      /licensed\s+dog\s+breeder/i,
+      /cap\s+\d+b?/i,
+      /traders?\s+and\s+staff/i
+    ];
+    
+    const hasExcludedContent = excludePatterns.some(pattern => pattern.test(cleanDescription));
+    
+    if (hasExcludedContent) {
+      console.warn(`检测到不相关内容，使用默认描述`);
+      return [`${pet.name}正在寻找一个充满爱的家庭。`];
+    }
+    
+    // 对于SPCA数据，智能分段显示完整内容
+    if (source === 'spca') {
+      // 如果描述很短，直接返回
+      if (cleanDescription.length < 100) {
+        return [cleanDescription];
+      }
+      
+      // 按段落分割（保持原有的段落结构）
+      const paragraphs = cleanDescription.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+      
+      if (paragraphs.length > 1) {
+        // 如果有多个段落，返回段落数组
+        return paragraphs.map(p => p.trim());
+      } else {
+        // 如果是一个长段落，按句子分割
+        const sentences = cleanDescription.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 10);
+        
+        if (sentences.length > 1) {
+          return sentences.map(s => s.trim());
+        } else {
+          // 如果是一个很长的句子，直接返回
+          return [cleanDescription];
+        }
+      }
+    }
+    
+    // 对于其他来源的数据，使用原有的格式化逻辑
+    if (source === 'petfinder') {
+      return formatPetfinderDescription(cleanDescription);
+    } else {
+      return [cleanDescription];
+    }
   };
 
-  const descriptionLines = formatDescriptionContent(pet.description, pet.source);
+  const descriptionLines = formatDescriptionContent(pet.description, pet.source, pet.personalityTags);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -470,31 +490,10 @@ const PetDetailModal = ({ pet, onClose }) => {
                   <span className="font-medium">{pet.location}</span>
                 </div>
 
-                {pet.birthDate && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">出生日期:</span>
-                    <span className="font-medium">{pet.birthDate}</span>
-                  </div>
-                )}
-
-                {pet.microchip && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">芯片号码:</span>
-                    <span className="font-medium text-xs">{pet.microchip}</span>
-                  </div>
-                )}
-
                 {pet.center && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">现在位置:</span>
                     <span className="font-medium">{pet.center}</span>
-                  </div>
-                )}
-
-                {pet.intake && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">摄入方式:</span>
-                    <span className="font-medium text-sm">{pet.intake}</span>
                   </div>
                 )}
               </div>
@@ -505,30 +504,31 @@ const PetDetailModal = ({ pet, onClose }) => {
               
               <div className="text-gray-700 mb-4 space-y-3">
                 {descriptionLines.length > 0 ? (
-                  descriptionLines.map((line, index) => {
-                    if (line.startsWith('**') && line.includes('**')) {
-                      const parts = line.split('**');
-                      return (
-                        <div key={index} className="font-medium text-gray-900">
-                          {parts.map((part, i) => 
-                            i % 2 === 1 ? <strong key={i}>{part}</strong> : part
-                          )}
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <p key={index} className="leading-relaxed">
-                          {line}
-                        </p>
-                      );
-                    }
-                  })
+                  descriptionLines.map((line, index) => (
+                    <p key={index} className="leading-relaxed">
+                      {line}
+                    </p>
+                  ))
                 ) : (
                   <p className="text-gray-500 italic">
-                    暂无详细描述信息
+                    {pet.name}正在寻找一个充满爱的家庭
                   </p>
                 )}
               </div>
+              
+              {/* 显示性格标签 */}
+              {pet.personalityTags && pet.personalityTags.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-medium mb-2">性格特点</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {pet.personalityTags.map((tag, index) => (
+                      <span key={index} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="mb-4">
                 <h4 className="font-medium mb-2">特点标签</h4>

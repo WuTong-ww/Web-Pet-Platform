@@ -585,49 +585,216 @@ const extractPetName = ($, bodyText, code) => {
 
 // 提取宠物类型
 const extractPetType = ($, bodyText) => {
+  console.log('🔍 开始提取宠物类型...');
+  
   const typeText = bodyText.toLowerCase();
   
-  if (typeText.includes('dog') || typeText.includes('canine') || typeText.includes('狗') || typeText.includes('犬')) {
-    return '狗';
-  } else if (typeText.includes('cat') || typeText.includes('feline') || typeText.includes('貓') || typeText.includes('猫')) {
-    return '貓';
-  } else if (typeText.includes('rabbit') || typeText.includes('兔')) {
-    return '兔';
-  } else if (typeText.includes('bird') || typeText.includes('鳥') || typeText.includes('鸟')) {
-    return '鳥';
+  // 1. 优先查找明确的类型标识
+  console.log('🔍 查找明确的类型标识...');
+  
+  // 查找"I am a xxx"模式中的类型信息
+  const iAmTypePatterns = [
+    /I am a\s+[A-Za-z\s\(\)]*?\s+(dog|cat|rabbit|bird|reptile|snake|skink)/gi,
+    /I'm a\s+[A-Za-z\s\(\)]*?\s+(dog|cat|rabbit|bird|reptile|snake|skink)/gi
+  ];
+  
+  for (const pattern of iAmTypePatterns) {
+    const matches = typeText.matchAll(pattern);
+    for (const match of matches) {
+      if (match && match[1]) {
+        const detectedType = match[1].toLowerCase();
+        console.log(`📝 从"I am a"模式检测到类型: ${detectedType}`);
+        
+        switch (detectedType) {
+          case 'dog': return 'dog';
+          case 'cat': return 'cat';
+          case 'rabbit': return 'rabbit';
+          case 'bird': return 'bird';
+          case 'reptile':
+          case 'snake':
+          case 'skink': return 'reptile';
+        }
+      }
+    }
   }
   
+  // 2. 基于品种信息推断类型
+  console.log('🔍 基于品种信息推断类型...');
+  
+  // 狗的品种关键词
+  const dogBreeds = [
+    'mongrel', 'golden retriever', 'labrador', 'husky', 'poodle', 'bulldog', 
+    'terrier', 'shepherd', 'beagle', 'corgi', 'chihuahua', 'dachshund',
+    'pomeranian', 'shih tzu', 'maltese', 'yorkshire', 'jack russell',
+    'boxer', 'rottweiler', 'doberman', 'great dane', 'mastiff'
+  ];
+  
+  // 猫的品种关键词
+  const catBreeds = [
+    'domestic short hair', 'domestic long hair', 'domestic shorthair', 'domestic longhair',
+    'persian', 'siamese', 'maine coon', 'british shorthair', 'ragdoll',
+    'bengal', 'scottish fold', 'russian blue', 'american shorthair',
+    'exotic shorthair', 'abyssinian', 'burmese', 'himalayan'
+  ];
+  
+  // 爬虫类品种关键词
+  const reptileBreeds = [
+    'sandfish skink', 'skink', 'snake', 'lizard', 'gecko', 'iguana',
+    'chameleon', 'bearded dragon', 'turtle', 'tortoise'
+  ];
+  
+  // 检查品种匹配
+  for (const breed of dogBreeds) {
+    if (typeText.includes(breed)) {
+      console.log(`📝 通过品种"${breed}"识别为狗`);
+      return 'dog';
+    }
+  }
+  
+  for (const breed of catBreeds) {
+    if (typeText.includes(breed)) {
+      console.log(`📝 通过品种"${breed}"识别为猫`);
+      return 'cat';
+    }
+  }
+  
+  for (const breed of reptileBreeds) {
+    if (typeText.includes(breed)) {
+      console.log(`📝 通过品种"${breed}"识别为爬虫`);
+      return 'reptile';
+    }
+  }
+  
+  // 3. 基于关键词匹配（更严格的规则）
+  console.log('🔍 基于关键词匹配...');
+  
+  // 狗的关键词
+  if (typeText.includes('dog') || typeText.includes('canine') || 
+      typeText.includes('puppy') || typeText.includes('狗') || 
+      typeText.includes('犬') || typeText.includes('小狗')) {
+    console.log('📝 通过关键词识别为狗');
+    return 'dog';
+  }
+  
+  // 猫的关键词（移除了过于宽泛的'hair'）
+  if (typeText.includes('cat') || typeText.includes('feline') || 
+      typeText.includes('kitten') || typeText.includes('貓') || 
+      typeText.includes('猫') || typeText.includes('小猫')) {
+    console.log('📝 通过关键词识别为猫');
+    return 'cat';
+  }
+  
+  // 兔子的关键词
+  if (typeText.includes('rabbit') || typeText.includes('bunny') || 
+      typeText.includes('兔') || typeText.includes('小兔')) {
+    console.log('📝 通过关键词识别为兔子');
+    return 'rabbit';
+  }
+  
+  // 鸟类的关键词
+  if (typeText.includes('bird') || typeText.includes('鳥') || 
+      typeText.includes('鸟') || typeText.includes('parrot') || 
+      typeText.includes('canary')) {
+    console.log('📝 通过关键词识别为鸟类');
+    return 'bird';
+  }
+  
+  // 爬虫类的关键词
+  if (typeText.includes('skink') || typeText.includes('snake') || 
+      typeText.includes('lizard') || typeText.includes('reptile') || 
+      typeText.includes('gecko') || typeText.includes('iguana')) {
+    console.log('📝 通过关键词识别为爬宠');
+    return 'reptile';
+  }
+  
+  console.log('📝 未能识别类型，使用默认值');
   return 'Pet';
 };
 
 // 提取品种信息
 const extractBreedInfo = ($, bodyText) => {
-  const breedSelectors = [
-    '.breed', 
-    '.pet-breed', 
-    '.animal-breed',
-    '[class*="breed"]', 
-    '[class*="type"]',
-    '.info-row:contains("品種")',
-    '.info-row:contains("breed")'
+  console.log('🔍 开始提取品种信息...');
+  
+  // 2. 新的逻辑：查找BREED前面的文本模式
+  console.log('🔍 查找BREED前面的品种信息...');
+  
+  // 查找 "xxx BREED" 或 "xxx breed" 模式，提取xxx部分
+  const breedFrontPatterns = [
+    // 匹配 "Golden Retriever BREED" 或 "Mixed BREED"
+    /([A-Za-z\s\u4e00-\u9fff]+?)\s+BREED/gi,
+    /([A-Za-z\s\u4e00-\u9fff]+?)\s+breed/gi,
+    // 匹配编号后面到BREED前面的内容，如 "No.123456 Golden Retriever BREED"
+    /no\.\s*\d+\s+([A-Za-z\s\u4e00-\u9fff]+?)\s+BREED/gi,
+    /no\.\s*\d+\s+([A-Za-z\s\u4e00-\u9fff]+?)\s+breed/gi,
+    // 匹配更宽泛的模式：数字后面到BREED前面的内容
+    /\d{5,7}\s+([A-Za-z\s\u4e00-\u9fff]+?)\s+BREED/gi,
+    /\d{5,7}\s+([A-Za-z\s\u4e00-\u9fff]+?)\s+breed/gi
   ];
   
-  for (const selector of breedSelectors) {
-    const breedText = $(selector).text().trim();
-    if (breedText && breedText.length > 0 && breedText.length < 50) {
-      const cleanBreed = breedText.replace(/品種[:\s]*|breed[:\s]*/i, '').trim();
-      if (cleanBreed.length > 0) {
-        console.log(`📝 从选择器 ${selector} 提取到品种: ${cleanBreed}`);
-        return cleanBreed;
+  for (const pattern of breedFrontPatterns) {
+    const matches = bodyText.matchAll(pattern);
+    for (const match of matches) {
+      if (match && match[1]) {
+        const breed = match[1].trim();
+        // 过滤掉明显不是品种的词汇
+        const invalidWords = ['animal', 'pet', 'dog', 'cat', 'puppy', 'kitten', 'male', 'female', 'age', 'year', 'month', 'the', 'a', 'an'];
+        const breedLower = breed.toLowerCase();
+        
+        if (breed.length > 1 && breed.length < 30 && 
+            !invalidWords.some(word => breedLower === word || breedLower.includes(word + ' '))) {
+          console.log(`📝 从BREED前面提取到品种: ${breed}`);
+          return breed;
+        }
       }
     }
   }
   
+  // 3. 尝试查找编号后面但BREED前面的文本
+  console.log('🔍 查找编号后面到BREED前面的文本...');
+  
+  // 分割文本为行，查找包含编号和BREED的行
+  const lines = bodyText.split('\n');
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    // 查找包含编号和BREED的行
+    const breedLinePatterns = [
+      /no\.\s*(\d+)\s+(.+?)\s+breed/gi,
+      /(\d{5,7})\s+(.+?)\s+breed/gi,
+      /code[:\s]*(\d+)\s+(.+?)\s+breed/gi
+    ];
+    
+    for (const pattern of breedLinePatterns) {
+      const match = trimmedLine.match(pattern);
+      if (match && match[2]) {
+        const potentialBreed = match[2].trim();
+        
+        // 清理品种名称，移除多余的空格和特殊字符
+        const cleanedBreed = potentialBreed
+          .replace(/\s+/g, ' ')
+          .replace(/[^\w\s\u4e00-\u9fff-]/g, '')
+          .trim();
+        
+        if (cleanedBreed.length > 1 && cleanedBreed.length < 30) {
+          console.log(`📝 从编号后BREED前提取到品种: ${cleanedBreed}`);
+          return cleanedBreed;
+        }
+      }
+    }
+  }
+  
+  // 4. 原有的品种匹配模式（保留作为备用）
+  console.log('🔍 使用原有品种匹配模式...');
+  
   const breedPatterns = [
     /breed[:\s]+([^,\n]+)/i,
     /品種[:\s]*([^,\n]+)/i,
-    /(golden retriever|labrador|husky|poodle|bulldog|terrier|shepherd|混種|mix|domestic)/i,
-    /(persian|siamese|maine coon|british shorthair|家貓|短毛|長毛)/i
+    // 常见品种名称模式
+    /(golden retriever|labrador|husky|poodle|bulldog|terrier|shepherd|混種|mix|domestic|mongrel)/i,
+    /(persian|siamese|maine coon|british shorthair|家貓|短毛|長毛|short hair|long hair)/i,
+    // 新增更多品种模式
+    /(beagle|corgi|chihuahua|dachshund|pomeranian|shih tzu|maltese|yorkshire|jack russell)/i,
+    /(ragdoll|bengal|scottish fold|russian blue|american shorthair|exotic shorthair)/i
   ];
   
   for (const pattern of breedPatterns) {
@@ -641,23 +808,150 @@ const extractBreedInfo = ($, bodyText) => {
     }
   }
   
-  console.log(`📝 使用默认品种: Mixed Breed`);
-  return 'Mixed Breed';
+  // 5. 尝试从HTML结构中提取更精确的品种信息
+  console.log('🔍 从HTML结构中查找品种信息...');
+  
+  // 查找可能包含品种信息的HTML元素
+  const potentialBreedElements = [
+    'td', 'span', 'div', 'p', 'strong', 'b'
+  ];
+  
+  for (const element of potentialBreedElements) {
+    $(element).each((i, el) => {
+      const text = $(el).text().trim();
+      
+      // 检查是否包含品种相关关键词
+      if (text.toLowerCase().includes('breed') || text.includes('品種')) {
+        // 尝试提取品种信息
+        const breedMatch = text.match(/([A-Za-z\s\u4e00-\u9fff]+?)\s+(?:breed|品種)/i);
+        if (breedMatch && breedMatch[1]) {
+          const breed = breedMatch[1].trim();
+          if (breed.length > 1 && breed.length < 30) {
+            console.log(`📝 从HTML元素提取到品种: ${breed}`);
+            return breed;
+          }
+        }
+      }
+    });
+  }
+  
+  console.log(`📝 使用默认品种: Unknown`);
+  return 'Unknown';
 };
 
-// 提取年龄信息
+// 提取年龄信息 - 修改为提取生日信息
 const extractAgeInfo = ($, bodyText) => {
+  console.log('🔍 开始提取年龄/生日信息...');
+  
+  // 1. 优先查找生日信息
+  const birthdayPatterns = [
+    /my birthday is (\d{4}-\d{2}-\d{2})/i,
+    /birthday[:\s]+(\d{4}-\d{2}-\d{2})/i,
+    /born[:\s]+(\d{4}-\d{2}-\d{2})/i,
+    /birth date[:\s]*(\d{4}-\d{2}-\d{2})/i,
+    /生日[:\s]*(\d{4}-\d{2}-\d{2})/i,
+    /出生日期[:\s]*(\d{4}-\d{2}-\d{2})/i,
+    // 支持不同的日期格式
+    /my birthday is (\d{2}\/\d{2}\/\d{4})/i,
+    /my birthday is (\d{2}-\d{2}-\d{4})/i,
+    /birthday[:\s]+(\d{2}\/\d{2}\/\d{4})/i,
+    /birthday[:\s]+(\d{2}-\d{2}-\d{4})/i
+  ];
+  
+  for (const pattern of birthdayPatterns) {
+    const match = bodyText.match(pattern);
+    if (match && match[1]) {
+      const birthday = match[1].trim();
+      console.log(`🎂 提取到生日: ${birthday}`);
+      
+      // 格式化生日显示
+      try {
+        // 尝试解析日期以验证格式
+        let formattedBirthday = birthday;
+        
+        // 如果是 MM/DD/YYYY 或 DD/MM/YYYY 格式，转换为 YYYY-MM-DD
+        if (birthday.includes('/')) {
+          const parts = birthday.split('/');
+          if (parts.length === 3 && parts[2].length === 4) {
+            // 假设是 MM/DD/YYYY 格式
+            formattedBirthday = `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+          }
+        }
+        
+        // 如果是 DD-MM-YYYY 格式，转换为 YYYY-MM-DD
+        if (birthday.includes('-') && birthday.split('-')[2]?.length === 4) {
+          const parts = birthday.split('-');
+          if (parts.length === 3 && parts[2].length === 4) {
+            formattedBirthday = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        }
+        
+        // 验证日期格式
+        if (formattedBirthday.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return `生日: ${formattedBirthday}`;
+        } else {
+          return `生日: ${birthday}`;
+        }
+      } catch (error) {
+        console.log(`⚠️ 生日格式解析失败，使用原始格式: ${birthday}`);
+        return `生日: ${birthday}`;
+      }
+    }
+  }
+  
+  // 2. 如果没有找到生日，尝试查找年龄相关信息
+  console.log('🔍 未找到生日信息，查找年龄信息...');
+  
   const agePatterns = [
-    /age[:\s]+([^,\n]+)/i,
-    /年齡[:\s]*([^,\n]+)/i,
-    /(\d+)\s*(year|years|歲|岁|月|個月)/i,
-    /(puppy|kitten|adult|senior|young|幼|成年|老年)/i
+    /age[:\s]+(\d+)\s*(year|years|歲|岁)/i,
+    /年齡[:\s]*(\d+)\s*(歲|岁|年)/i,
+    /(\d+)\s*(year|years|歲|岁)\s*old/i,
+    /(\d+)\s*(個月|月|months?)/i,
+    /(puppy|kitten|adult|senior|young|幼|幼犬|幼貓|成年|老年)/i
   ];
   
   for (const pattern of agePatterns) {
     const match = bodyText.match(pattern);
     if (match && match[1]) {
       const age = match[1].trim();
+      
+      // 处理数字年龄
+      if (!isNaN(age)) {
+        const ageNum = parseInt(age);
+        if (ageNum >= 0 && ageNum <= 20) {
+          // 检查是否是月份
+          if (bodyText.toLowerCase().includes('month') || 
+              bodyText.includes('個月') || 
+              bodyText.includes('月')) {
+            console.log(`📝 提取到年龄: ${ageNum} 个月`);
+            return `${ageNum} 个月`;
+          } else {
+            console.log(`📝 提取到年龄: ${ageNum} 岁`);
+            return `${ageNum} 岁`;
+          }
+        }
+      }
+      
+      // 处理文字年龄描述
+      const ageDescriptions = {
+        'puppy': '幼犬',
+        'kitten': '幼猫',
+        'adult': '成年',
+        'senior': '老年',
+        'young': '幼年',
+        '幼': '幼年',
+        '幼犬': '幼犬',
+        '幼貓': '幼猫',
+        '成年': '成年',
+        '老年': '老年'
+      };
+      
+      const ageKey = age.toLowerCase();
+      if (ageDescriptions[ageKey]) {
+        console.log(`📝 提取到年龄描述: ${ageDescriptions[ageKey]}`);
+        return ageDescriptions[ageKey];
+      }
+      
       if (age.length > 0 && age.length < 20) {
         console.log(`📝 提取到年龄: ${age}`);
         return age;
@@ -665,36 +959,416 @@ const extractAgeInfo = ($, bodyText) => {
     }
   }
   
+  // 3. 尝试从选择器中提取年龄信息
+  console.log('🔍 从HTML选择器查找年龄信息...');
+  
+  const ageSelectors = [
+    '.age',
+    '.pet-age',
+    '.animal-age',
+    '[class*="age"]',
+    '[class*="birthday"]',
+    '[class*="birth"]'
+  ];
+  
+  for (const selector of ageSelectors) {
+    const ageText = $(selector).text().trim();
+    if (ageText && ageText.length > 0 && ageText.length < 50) {
+      // 检查是否包含生日信息
+      if (ageText.includes('-') && ageText.match(/\d{4}-\d{2}-\d{2}/)) {
+        console.log(`📝 从选择器 ${selector} 提取到生日: ${ageText}`);
+        return `生日: ${ageText}`;
+      }
+      
+      // 检查是否包含年龄信息
+      if (ageText.match(/\d+/) || ageText.match(/(puppy|kitten|adult|senior|young|幼|成年|老年)/i)) {
+        console.log(`📝 从选择器 ${selector} 提取到年龄: ${ageText}`);
+        return ageText;
+      }
+    }
+  }
+  
+  console.log('📝 未找到年龄信息，使用默认值');
   return 'Unknown';
 };
 
 // 提取性别信息
 const extractGenderInfo = ($, bodyText) => {
+  console.log('🔍 开始提取性别信息...');
+  
+  // 1. 新的逻辑：查找"I am a xxx(性别) xxx(品种)"模式
+  console.log('🔍 查找"I am a xxx(性别) xxx(品种)"格式...');
+  
+  const iAmPatterns = [
+    // 匹配 "I am a Male Golden Retriever" 或 "I am a Female(Spayed) Domestic Cat"
+    /I am a\s+([A-Za-z\s\(\)]+?)\s+([A-Za-z\s\u4e00-\u9fff]+)/gi,
+    // 匹配 "I'm a Male Golden Retriever" 
+    /I'm a\s+([A-Za-z\s\(\)]+?)\s+([A-Za-z\s\u4e00-\u9fff]+)/gi,
+    // 匹配 "i am a male golden retriever" (小写)
+    /i am a\s+([A-Za-z\s\(\)]+?)\s+([A-Za-z\s\u4e00-\u9fff]+)/gi,
+    // 匹配完整句子，更宽泛的模式
+    /I am a\s+([A-Za-z\s\(\)]+?)\s+([A-Za-z\s\u4e00-\u9fff]+?)\s+(?:and|who|that|\.|\!)/gi,
+    /I'm a\s+([A-Za-z\s\(\)]+?)\s+([A-Za-z\s\u4e00-\u9fff]+?)\s+(?:and|who|that|\.|\!)/gi
+  ];
+  
+  for (const pattern of iAmPatterns) {
+    const matches = bodyText.matchAll(pattern);
+    for (const match of matches) {
+      if (match && match[1] && match[2]) {
+        const potentialGender = match[1].trim();
+        const potentialBreed = match[2].trim();
+        
+        console.log(`🔍 从"I am a"模式提取到: 可能性别="${potentialGender}", 可能品种="${potentialBreed}"`);
+        
+        // 验证第一个词是否是性别词汇
+        const validGenders = [
+          'male', 'female', 'boy', 'girl', 'man', 'woman', 
+          '公', '母', '雄', '雌',
+          'male(desexed)', 'female(desexed)', 
+          'male(neutered)', 'female(spayed)',
+          'male(castrated)', 'female(sterilized)',
+          'desexed', 'neutered', 'spayed', 'castrated', 'sterilized'
+        ];
+        
+        const genderLower = potentialGender.toLowerCase();
+        
+        const isValidGender = validGenders.some(gender => {
+          const genderPattern = gender.replace(/[()]/g, '\\$&'); // 转义括号
+          return new RegExp(`^${genderPattern}$`, 'i').test(genderLower) || 
+                 new RegExp(`^${genderPattern}\\s`, 'i').test(genderLower);
+        });
+        
+        // 验证第二个词是否是品种词汇（排除明显的性别词汇）
+        const breedLower = potentialBreed.toLowerCase();
+        const isNotGenderWord = !validGenders.some(gender => 
+          new RegExp(gender.replace(/[()]/g, '\\$&'), 'i').test(breedLower)
+        );
+        
+        if (isValidGender && isNotGenderWord && 
+            potentialGender.length > 0 && potentialGender.length < 30) {
+          console.log(`📝 从"I am a"模式提取到性别: ${potentialGender}`);
+          return potentialGender; // 直接返回原始文本，保留完整格式
+        }
+      }
+    }
+  }
+  
+  // 2. 原有逻辑：查找BREED后面GENDER前面的文本
+  console.log('🔍 查找BREED后面GENDER前面的性别信息...');
+  
+  // 查找 "BREED xxx GENDER" 或 "breed xxx gender" 模式，提取xxx部分
+  const breedToGenderPatterns = [
+    // 匹配 "BREED Male(Desexed) GENDER" 或 "breed Female(Spayed) gender"
+    /BREED\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+GENDER/gi,
+    /breed\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+gender/gi,
+    // 匹配编号后面的完整结构：如 "No.123456 Golden Retriever BREED Male(Desexed) GENDER"
+    /no\.\s*\d+\s+[A-Za-z\s\u4e00-\u9fff]+?\s+BREED\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+GENDER/gi,
+    /no\.\s*\d+\s+[A-Za-z\s\u4e00-\u9fff]+?\s+breed\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+gender/gi,
+    // 匹配更宽泛的模式：数字后面的完整结构
+    /\d{5,7}\s+[A-Za-z\s\u4e00-\u9fff]+?\s+BREED\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+GENDER/gi,
+    /\d{5,7}\s+[A-Za-z\s\u4e00-\u9fff]+?\s+breed\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+gender/gi
+  ];
+  
+  for (const pattern of breedToGenderPatterns) {
+    const matches = bodyText.matchAll(pattern);
+    for (const match of matches) {
+      if (match && match[1]) {
+        const genderText = match[1].trim();
+        
+        // 过滤掉明显不是性别的词汇
+        const invalidWords = ['animal', 'pet', 'dog', 'cat', 'puppy', 'kitten', 'age', 'year', 'month', 'breed', 'unknown'];
+        const genderLower = genderText.toLowerCase();
+        
+        // 扩展有效的性别词汇，包括带括号的形式
+        const validGenders = [
+          'male', 'female', 'boy', 'girl', 'man', 'woman', 
+          '公', '母', '雄', '雌',
+          'male(desexed)', 'female(desexed)', 
+          'male(neutered)', 'female(spayed)',
+          'male(castrated)', 'female(sterilized)',
+          'desexed', 'neutered', 'spayed', 'castrated', 'sterilized'
+        ];
+        
+        const isValidGender = validGenders.some(gender => {
+          const genderPattern = gender.replace(/[()]/g, '\\$&'); // 转义括号
+          return new RegExp(genderPattern, 'i').test(genderLower);
+        });
+        
+        if (genderText.length > 0 && genderText.length < 30 && 
+            !invalidWords.some(word => genderLower === word || genderLower.includes(word + ' ')) &&
+            isValidGender) {
+          console.log(`📝 从BREED后GENDER前提取到性别: ${genderText}`);
+          return genderText; // 直接返回原始文本，保留完整格式
+        }
+      }
+    }
+  }
+  
+  // 3. 尝试查找编号后面的完整行结构
+  console.log('🔍 查找编号后面的完整行结构...');
+  
+  const lines = bodyText.split('\n');
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    // 查找包含编号、BREED和GENDER的行
+    const genderLinePatterns = [
+      /no\.\s*(\d+)\s+[A-Za-z\s\u4e00-\u9fff]+?\s+breed\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+gender/gi,
+      /(\d{5,7})\s+[A-Za-z\s\u4e00-\u9fff]+?\s+breed\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+gender/gi,
+      /code[:\s]*(\d+)\s+[A-Za-z\s\u4e00-\u9fff]+?\s+breed\s+([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+gender/gi
+    ];
+    
+    for (const pattern of genderLinePatterns) {
+      const match = trimmedLine.match(pattern);
+      if (match && match[2]) {
+        const potentialGender = match[2].trim();
+        
+        // 保留括号，只清理不必要的特殊字符
+        const cleanedGender = potentialGender
+          .replace(/\s+/g, ' ')
+          .replace(/[^\w\s\u4e00-\u9fff\(\)]/g, '')
+          .trim();
+        
+        if (cleanedGender.length > 0 && cleanedGender.length < 30) {
+          console.log(`📝 从行结构提取到性别: ${cleanedGender}`);
+          return cleanedGender; // 直接返回，保留完整格式
+        }
+      }
+    }
+  }
+  
+  // 4. 传统的性别匹配模式（保留作为备用）
+  console.log('🔍 使用传统性别匹配模式...');
+  
   const genderPatterns = [
-    /gender[:\s]+(male|female)/i,
-    /sex[:\s]+(male|female)/i,
+    // 扩展模式以匹配带括号的性别信息
+    /gender[:\s]+(male\(desexed\)|female\(desexed\)|male\(neutered\)|female\(spayed\)|male\(castrated\)|female\(sterilized\)|male|female|公|母|雄|雌)/i,
+    /sex[:\s]+(male\(desexed\)|female\(desexed\)|male\(neutered\)|female\(spayed\)|male|female|公|母|雄|雌)/i,
     /性別[:\s]*(公|母|雄|雌)/i,
-    /(male|female|公|母)/i
+    // 直接匹配完整的性别表述
+    /(male\(desexed\)|female\(desexed\)|male\(neutered\)|female\(spayed\)|male\(castrated\)|female\(sterilized\))/i,
+    /(male|female|公|母|雄|雌)/i
   ];
   
   for (const pattern of genderPatterns) {
     const match = bodyText.match(pattern);
     if (match && match[1]) {
-      const gender = match[1].toLowerCase();
-      if (gender.includes('male') || gender.includes('公') || gender.includes('雄')) {
-        return '公';
-      } else if (gender.includes('female') || gender.includes('母') || gender.includes('雌')) {
-        return '母';
-      }
-      return match[1].trim();
+      const genderText = match[1].trim();
+      console.log(`📝 从传统模式提取到性别: ${genderText}`);
+      return genderText; // 直接返回原始文本
     }
   }
   
+  // 5. 尝试从HTML结构中提取性别信息
+  console.log('🔍 从HTML结构中查找性别信息...');
+  
+  const potentialGenderElements = [
+    'td', 'span', 'div', 'p', 'strong', 'b'
+  ];
+  
+  for (const element of potentialGenderElements) {
+    $(element).each((i, el) => {
+      const text = $(el).text().trim();
+      
+      // 检查是否包含性别相关关键词
+      if (text.toLowerCase().includes('gender') || 
+          text.toLowerCase().includes('sex') || 
+          text.includes('性別')) {
+        
+        // 尝试提取性别信息，保留括号内容
+        const genderMatch = text.match(/([A-Za-z\s\u4e00-\u9fff\(\)]+?)\s+(?:gender|sex|性別)/i);
+        if (genderMatch && genderMatch[1]) {
+          const genderText = genderMatch[1].trim();
+          if (genderText.length > 0 && genderText.length < 30) {
+            console.log(`📝 从HTML元素提取到性别: ${genderText}`);
+            return genderText; // 直接返回原始文本
+          }
+        }
+      }
+    });
+  }
+  
+  console.log('📝 未找到性别信息，使用默认值');
   return 'Unknown';
 };
 
 // 提取描述信息
 const extractDescription = ($, bodyText) => {
+  console.log('🔍 开始提取描述信息...');
+  
+  // 1. 优先查找"ABOUT ME"到"Facebook Twitter LinkedIn Google + Email"之间的内容
+  console.log('🔍 查找"ABOUT ME"到社交媒体链接之间的描述...');
+  
+  const aboutMeToSocialPatterns = [
+    // 匹配完整的ABOUT ME到社交媒体链接的内容
+    /ABOUT ME\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn\s+Google\s*\+\s*Email|$)/gi,
+    // 匹配简化版的社交媒体结尾
+    /ABOUT ME\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn|$)/gi,
+    /ABOUT ME\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter|$)/gi,
+    // 匹配带冒号的格式
+    /ABOUT ME:\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn\s+Google\s*\+\s*Email|$)/gi,
+    /ABOUT ME:\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn|$)/gi,
+    // 匹配小写版本
+    /about me\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn\s+Google\s*\+\s*Email|$)/gi,
+    /about me\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn|$)/gi,
+    /about me:\s*\n?([\s\S]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn\s+Google\s*\+\s*Email|$)/gi,
+    // 匹配更宽泛的社交媒体结尾模式
+    /ABOUT ME[\s:]*\n?([\s\S]*?)(?=\n?\s*Facebook.*Twitter.*LinkedIn|$)/gi,
+    /about me[\s:]*\n?([\s\S]*?)(?=\n?\s*Facebook.*Twitter.*LinkedIn|$)/gi,
+    // 匹配包含特征词汇的完整结构
+    /ABOUT ME\s*\n?([^]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn\s+Google\s*\+\s*Email|$)/gi,
+    /ABOUT ME\s*\n?([^]*?)(?=\n?\s*Facebook\s+Twitter\s+LinkedIn|$)/gi
+  ];
+  
+  for (const pattern of aboutMeToSocialPatterns) {
+    const matches = bodyText.matchAll(pattern);
+    for (const match of matches) {
+      if (match && match[1]) {
+        let description = match[1].trim();
+        
+        console.log(`🔍 从"ABOUT ME"到社交媒体模式提取到原始内容: ${description.substring(0, 100)}...`);
+        
+        // 检查是否包含特征词汇行（需要从描述中移除）
+        const characteristicsPattern = /^(Friendly,?\s*Courageous,?\s*Sophisticated,?\s*Strong|[A-Za-z\s,]+)\s*$/m;
+        const characteristicsMatch = description.match(characteristicsPattern);
+        
+        if (characteristicsMatch) {
+          console.log(`🔍 检测到特征词汇行: ${characteristicsMatch[0]}`);
+          // 移除特征词汇行，保留后面的实际描述
+          description = description.replace(characteristicsMatch[0], '').trim();
+        }
+        
+        // 清理和格式化描述内容
+        description = description
+          .replace(/\n\s*\n/g, '\n\n') // 规范化段落间距
+          .replace(/\n/g, ' ') // 将换行符替换为空格
+          .replace(/\s+/g, ' ') // 合并多个空格
+          .trim();
+        
+        // 验证描述长度和质量
+        if (description.length >= 30 && description.length <= 2000) {
+          // 检查是否包含有意义的内容
+          const meaningfulContent = description.match(/[.!?]/g); // 包含句号、感叹号或问号
+          const hasPersonalStory = description.toLowerCase().includes('i am') || 
+                                  description.toLowerCase().includes('hi,') ||
+                                  description.toLowerCase().includes('hello,') ||
+                                  description.toLowerCase().includes('my name') ||
+                                  description.toLowerCase().includes('i was') ||
+                                  description.toLowerCase().includes('i love') ||
+                                  description.toLowerCase().includes('please give me');
+          
+          // 检查是否不只是特征词汇
+          const isNotJustCharacteristics = !description.match(/^[A-Za-z\s,]+$/);
+          
+          if ((meaningfulContent && meaningfulContent.length > 0) || hasPersonalStory || isNotJustCharacteristics) {
+            console.log(`📝 从"ABOUT ME"到社交媒体提取到完整描述 (${description.length} 字符)`);
+            return description;
+          }
+        }
+      }
+    }
+  }
+  
+  // 2. 如果没有找到标准格式，尝试查找"ABOUT ME"后面的内容（原有逻辑保留作为备用）
+  console.log('🔍 未找到标准格式，尝试查找"ABOUT ME"后面的内容...');
+  
+  const aboutMePatterns = [
+    // 匹配 "ABOUT ME" 后面的完整内容，直到遇到下一个大写标题或结束
+    /ABOUT ME\s*\n([\s\S]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|$)/gi,
+    // 匹配 "about me" (小写)
+    /about me\s*\n([\s\S]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|$)/gi,
+    // 匹配带冒号的格式
+    /ABOUT ME:\s*\n([\s\S]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|$)/gi,
+    /about me:\s*\n([\s\S]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|$)/gi,
+    // 匹配更宽泛的格式，包括同一行的内容
+    /ABOUT ME[\s:]*([^]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|$)/gi,
+    /about me[\s:]*([^]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|$)/gi
+  ];
+  
+  for (const pattern of aboutMePatterns) {
+    const matches = bodyText.matchAll(pattern);
+    for (const match of matches) {
+      if (match && match[1]) {
+        let description = match[1].trim();
+        
+        console.log(`🔍 从"ABOUT ME"模式提取到原始内容: ${description.substring(0, 100)}...`);
+        
+        // 同样处理特征词汇行
+        const characteristicsPattern = /^(Friendly,?\s*Courageous,?\s*Sophisticated,?\s*Strong|[A-Za-z\s,]+)\s*$/m;
+        const characteristicsMatch = description.match(characteristicsPattern);
+        
+        if (characteristicsMatch) {
+          console.log(`🔍 检测到特征词汇行: ${characteristicsMatch[0]}`);
+          description = description.replace(characteristicsMatch[0], '').trim();
+        }
+        
+        // 清理和格式化描述内容
+        description = description
+          .replace(/\n\s*\n/g, '\n\n') // 规范化段落间距
+          .replace(/\n/g, ' ') // 将换行符替换为空格
+          .replace(/\s+/g, ' ') // 合并多个空格
+          .trim();
+        
+        // 验证描述长度和质量
+        if (description.length >= 30 && description.length <= 2000) {
+          // 检查是否包含有意义的内容（不只是特征词汇）
+          const meaningfulContent = description.match(/[.!?]/g); // 包含句号、感叹号或问号
+          const hasPersonalStory = description.toLowerCase().includes('i am') || 
+                                  description.toLowerCase().includes('hi,') ||
+                                  description.toLowerCase().includes('hello,') ||
+                                  description.toLowerCase().includes('my name') ||
+                                  description.toLowerCase().includes('i was') ||
+                                  description.toLowerCase().includes('i love') ||
+                                  description.toLowerCase().includes('please give me');
+          
+          if (meaningfulContent && meaningfulContent.length > 0 || hasPersonalStory) {
+            console.log(`📝 从"ABOUT ME"提取到完整描述 (${description.length} 字符)`);
+            return description;
+          }
+        }
+      }
+    }
+  }
+  
+  // 3. 如果没有找到"ABOUT ME"，尝试查找其他描述模式
+  console.log('🔍 未找到"ABOUT ME"，尝试其他描述模式...');
+  
+  // 查找以"Hi, I'm"开始的自我介绍
+  const selfIntroPatterns = [
+    /Hi,\s*I'm\s+[^.]*\.([\s\S]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|Facebook\s+Twitter|$)/gi,
+    /Hello,\s*I'm\s+[^.]*\.([\s\S]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|Facebook\s+Twitter|$)/gi,
+    /My name is\s+[^.]*\.([\s\S]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|Facebook\s+Twitter|$)/gi
+  ];
+  
+  for (const pattern of selfIntroPatterns) {
+    const matches = bodyText.matchAll(pattern);
+    for (const match of matches) {
+      if (match && match[1]) {
+        let description = match[1].trim();
+        
+        // 提取包含"Hi, I'm"的完整段落
+        const fullIntroMatch = bodyText.match(/(Hi,\s*I'm\s+[^]*?)(?=\n[A-Z]{2,}|\n\n[A-Z]{2,}|Facebook\s+Twitter|$)/gi);
+        if (fullIntroMatch && fullIntroMatch[0]) {
+          description = fullIntroMatch[0].trim();
+        }
+        
+        description = description
+          .replace(/\n\s*\n/g, '\n\n')
+          .replace(/\n/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (description.length >= 30 && description.length <= 2000) {
+          console.log(`📝 从自我介绍模式提取到描述 (${description.length} 字符)`);
+          return description;
+        }
+      }
+    }
+  }
+  
+  // 4. 尝试从HTML选择器中提取描述
+  console.log('🔍 从HTML选择器查找描述...');
+  
   const descSelectors = [
     '.description', 
     '.pet-description', 
@@ -704,25 +1378,65 @@ const extractDescription = ($, bodyText) => {
     '.content', 
     '.details',
     '.info-section',
-    'p'
+    '.entry-content',
+    '.post-content',
+    '.animal-info'
   ];
   
   for (const selector of descSelectors) {
     const descText = $(selector).text().trim();
-    if (descText && descText.length > 50 && descText.length < 1000) {
-      console.log(`📝 从选择器 ${selector} 提取到描述 (${descText.length} 字符)`);
-      return descText;
+    if (descText && descText.length > 30 && descText.length < 2000) {
+      // 检查是否包含"ABOUT ME"相关内容
+      if (descText.toLowerCase().includes('about me') || 
+          descText.toLowerCase().includes('hi, i\'m') ||
+          descText.toLowerCase().includes('my name is')) {
+        console.log(`📝 从选择器 ${selector} 提取到描述 (${descText.length} 字符)`);
+        return descText;
+      }
     }
   }
   
-  const paragraphs = $('p').map((i, p) => $(p).text().trim()).get();
-  const longParagraph = paragraphs.find(p => p.length > 50 && p.length < 1000);
+  // 5. 查找最长的有意义段落
+  console.log('🔍 查找最长的有意义段落...');
   
-  if (longParagraph) {
-    console.log(`📝 从段落提取到描述 (${longParagraph.length} 字符)`);
-    return longParagraph;
+  const paragraphs = $('p').map((i, p) => $(p).text().trim()).get();
+  const meaningfulParagraphs = paragraphs.filter(p => 
+    p.length > 30 && 
+    p.length < 2000 && 
+    (p.includes('.') || p.includes('!') || p.includes('?')) &&
+    !p.toLowerCase().includes('error') &&
+    !p.toLowerCase().includes('404')
+  );
+  
+  if (meaningfulParagraphs.length > 0) {
+    // 按长度排序，选择最长的
+    const longestParagraph = meaningfulParagraphs.sort((a, b) => b.length - a.length)[0];
+    console.log(`📝 从段落提取到描述 (${longestParagraph.length} 字符)`);
+    return longestParagraph;
   }
   
+  // 6. 最后尝试从整个文本中提取包含动物相关信息的段落
+  console.log('🔍 从整个文本提取动物相关段落...');
+  
+  const animalKeywords = ['dog', 'cat', 'pet', 'animal', 'friendly', 'love', 'play', 'home', 'family'];
+  const textParagraphs = bodyText.split('\n').filter(p => p.trim().length > 30);
+  
+  for (const paragraph of textParagraphs) {
+    const cleanParagraph = paragraph.trim();
+    if (cleanParagraph.length >= 30 && cleanParagraph.length <= 2000) {
+      const hasAnimalKeywords = animalKeywords.some(keyword => 
+        cleanParagraph.toLowerCase().includes(keyword)
+      );
+      
+      if (hasAnimalKeywords && 
+          (cleanParagraph.includes('.') || cleanParagraph.includes('!') || cleanParagraph.includes('?'))) {
+        console.log(`📝 从文本段落提取到描述 (${cleanParagraph.length} 字符)`);
+        return cleanParagraph;
+      }
+    }
+  }
+  
+  console.log('📝 未找到合适的描述信息');
   return null;
 };
 

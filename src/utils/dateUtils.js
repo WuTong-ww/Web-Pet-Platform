@@ -19,23 +19,19 @@ export const formatDate = (date, format = 'date') => {
     
     switch (format) {
       case 'date':
-        return dateObj.toLocaleDateString('zh-CN', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
+        return dateObj.toLocaleDateString('zh-CN');
       
       case 'time':
-        return dateObj.toLocaleTimeString('zh-CN', {
-          hour: '2-digit',
-          minute: '2-digit'
+        return dateObj.toLocaleTimeString('zh-CN', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
         });
       
       case 'datetime':
         return dateObj.toLocaleString('zh-CN', {
           year: 'numeric',
-          month: 'long',
-          day: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
           hour: '2-digit',
           minute: '2-digit'
         });
@@ -46,14 +42,14 @@ export const formatDate = (date, format = 'date') => {
       default:
         return dateObj.toLocaleDateString('zh-CN');
     }
-  };
-  
-  /**
-   * 获取相对时间描述
-   * @param {Date} date - 日期对象
-   * @returns {string} - 相对时间描述
-   */
-  export const getRelativeTimeString = (date) => {
+};
+
+/**
+ * 获取相对时间描述
+ * @param {Date} date - 日期对象
+ * @returns {string} - 相对时间描述
+ */
+export const getRelativeTimeString = (date) => {
     const now = new Date();
     const diffMs = now - date;
     const diffSec = Math.round(diffMs / 1000);
@@ -79,15 +75,15 @@ export const formatDate = (date, format = 'date') => {
     if (diffDay < 30) return `${Math.round(diffDay / 7)}周前`;
     if (diffDay < 365) return `${Math.round(diffDay / 30)}个月前`;
     return `${Math.round(diffDay / 365)}年前`;
-  };
-  
-  /**
-   * 获取两个日期之间的时间差描述
-   * @param {Date|string} startDate - 开始日期
-   * @param {Date|string} endDate - 结束日期
-   * @returns {string} - 时间差描述
-   */
-  export const getDateDifference = (startDate, endDate) => {
+};
+
+/**
+ * 获取两个日期之间的时间差描述
+ * @param {Date|string} startDate - 开始日期
+ * @param {Date|string} endDate - 结束日期
+ * @returns {string} - 时间差描述
+ */
+export const getDateDifference = (startDate, endDate) => {
     const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
     const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
     
@@ -105,14 +101,14 @@ export const formatDate = (date, format = 'date') => {
     if (diffDays < 30) return `${Math.round(diffDays / 7)}周`;
     if (diffDays < 365) return `${Math.round(diffDays / 30)}个月`;
     return `${Math.round(diffDays / 365)}年`;
-  };
-  
-  /**
-   * 获取日期的友好显示格式
-   * @param {Date|string} date - 日期对象或日期字符串
-   * @returns {string} - 友好格式的日期
-   */
-  export const getFriendlyDate = (date) => {
+};
+
+/**
+ * 获取日期的友好显示格式
+ * @param {Date|string} date - 日期对象或日期字符串
+ * @returns {string} - 友好格式的日期
+ */
+export const getFriendlyDate = (date) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     const now = new Date();
     
@@ -142,15 +138,15 @@ export const formatDate = (date, format = 'date') => {
     }
     
     return dateObj.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
-  };
-  
-  /**
-   * 检查日期是否在指定时间范围内
-   * @param {Date|string} date - 需要检查的日期
-   * @param {string} range - 时间范围 ('today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth')
-   * @returns {boolean} - 是否在指定范围内
-   */
-  export const isDateInRange = (date, range) => {
+};
+
+/**
+ * 检查日期是否在指定时间范围内
+ * @param {Date|string} date - 需要检查的日期
+ * @param {string} range - 时间范围 ('today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth')
+ * @returns {boolean} - 是否在指定范围内
+ */
+export const isDateInRange = (date, range) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     const now = new Date();
     
@@ -190,44 +186,39 @@ export const formatDate = (date, format = 'date') => {
       }
       
       case 'thisWeek':
-        return dateObj >= startOfWeek(now);
+        return dateObj >= startOfWeek(now) && dateObj <= endOfDay(now);
       
       case 'lastWeek': {
         const lastWeekStart = new Date(startOfWeek(now));
         lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-        const lastWeekEnd = new Date(startOfWeek(now));
-        lastWeekEnd.setDate(lastWeekEnd.getDate() - 1);
-        lastWeekEnd.setHours(23, 59, 59, 999);
-        
-        return dateObj >= lastWeekStart && dateObj <= lastWeekEnd;
+        const lastWeekEnd = new Date(lastWeekStart);
+        lastWeekEnd.setDate(lastWeekEnd.getDate() + 6);
+        return dateObj >= lastWeekStart && dateObj <= endOfDay(lastWeekEnd);
       }
       
       case 'thisMonth':
-        return dateObj >= startOfMonth(now);
+        return dateObj >= startOfMonth(now) && dateObj <= endOfDay(now);
       
       case 'lastMonth': {
-        const lastMonthStart = new Date(startOfMonth(now));
-        lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-        
-        const lastMonthEnd = new Date(startOfMonth(now));
-        lastMonthEnd.setDate(lastMonthEnd.getDate() - 1);
-        lastMonthEnd.setHours(23, 59, 59, 999);
-        
-        return dateObj >= lastMonthStart && dateObj <= lastMonthEnd;
+        const lastMonth = new Date(now);
+        lastMonth.setMonth(now.getMonth() - 1);
+        const lastMonthStart = startOfMonth(lastMonth);
+        const lastMonthEnd = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
+        return dateObj >= lastMonthStart && dateObj <= endOfDay(lastMonthEnd);
       }
       
       default:
         return false;
     }
-  };
-  
-  /**
-   * 格式化活动日期范围
-   * @param {string} startDate - 开始日期字符串
-   * @param {string} endDate - 结束日期字符串
-   * @returns {string} - 格式化后的日期范围
-   */
-  export const formatDateRange = (startDate, endDate) => {
+};
+
+/**
+ * 格式化活动日期范围
+ * @param {string} startDate - 开始日期字符串
+ * @param {string} endDate - 结束日期字符串
+ * @returns {string} - 格式化后的日期范围
+ */
+export const formatDateRange = (startDate, endDate) => {
     if (!startDate || !endDate) return '';
     
     const start = new Date(startDate);
@@ -240,4 +231,4 @@ export const formatDate = (date, format = 'date') => {
     
     // 不同天
     return `${formatDate(start, 'date')} - ${formatDate(end, 'date')}`;
-  };
+};

@@ -1,5 +1,5 @@
 import React from "react";
-import { safeTextTruncate } from "../utils/textUtils";
+import { safeTextTruncate } from "../../utils/textUtils";
 
 export default function PetCard({ pet }) {
   const {
@@ -33,7 +33,7 @@ export default function PetCard({ pet }) {
   );
 
   // 使用安全的文本截断
-  const displayDescription = safeTextTruncate(description, 80, '...');
+  const displayDescription = safeTextTruncate(description, 135, '...');
 
   return (
     <div

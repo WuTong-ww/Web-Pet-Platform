@@ -42,7 +42,7 @@ export const safeTextTruncate = (text, maxLength = 100, suffix = '...') => {
 };
 
 /**
- * 验证文本完整性
+ * 验证文本完整性 - 针对Petfinder API响应优化
  */
 export const validateTextIntegrity = (text) => {
   if (!text || typeof text !== 'string') {
@@ -51,12 +51,81 @@ export const validateTextIntegrity = (text) => {
   
   const cleaned = cleanText(text);
   
-  if (cleaned.length < 10) {
+  if (cleaned.length < 5) {
     return { isValid: false, reason: 'Text too short', text: cleaned };
   }
   
   if (cleaned.length > 5000) {
     return { isValid: false, reason: 'Text too long', text: cleaned.substring(0, 5000) + '...' };
+  }
+  
+  // 检查是否包含无关内容
+  const excludeKeywords = [
+    'iframe', 'googletagmanager', 'gtm-', 'tag manager',
+    'please note', 'pre adoption application', 'application must be completed',
+    'training course', 'licensed dog breeder', 'display:none', 'visibility:hidden'
+  ];
+  
+  const hasExcludedContent = excludeKeywords.some(keyword => 
+    cleaned.toLowerCase().includes(keyword.toLowerCase())
+  );
+  
+  if (hasExcludedContent) {
+    return { isValid: false, reason: 'Contains excluded content', text: cleaned };
+  }
+  
+  // 扩展宠物相关内容检测 - 特别针对Petfinder的描述模式
+  const petKeywords = [
+    // 基础宠物关键词
+    'cat', 'dog', 'pet', 'animal', 'puppy', 'kitten',
+    
+    // 性格和行为描述
+    'shy', 'friendly', 'playful', 'gentle', 'active', 'calm', 'loving', 'sweet', 
+    'smart', 'intelligent', 'curious', 'brave', 'affectionate', 'social',
+    'independent', 'loyal', 'energetic', 'quiet', 'outgoing',
+    
+    // 常见的Petfinder描述词汇
+    'shorthaired', 'longhaired', 'medium', 'small', 'large', 'young', 'adult', 'senior',
+    'once', 'very', 'warm', 'up', 'warms up', 'she is', 'he is',
+    
+    // 动作和状态
+    'i am', 'i like', 'i love', 'i enjoy', 'i need', 'i seek', 'i prefer',
+    'looking for', 'searching for', 'need a', 'want a', 'perfect for',
+    'home', 'family', 'owner', 'adopt', 'adoption',
+    
+    // 身体特征
+    'coat', 'fur', 'tail', 'eyes', 'ears', 'paws', 'whiskers',
+    
+    // 健康状态
+    'vaccinated', 'spayed', 'neutered', 'healthy', 'shots', 'medical'
+  ];
+  
+  const textLower = cleaned.toLowerCase();
+  const hasPetContent = petKeywords.some(keyword => 
+    textLower.includes(keyword.toLowerCase())
+  );
+  
+  // 对于较短的文本，如果没有找到宠物关键词，但有基本的英文句子结构，也认为有效
+  const hasBasicEnglishStructure = /\b(is|are|was|were|have|has|had|will|would|can|could|should|the|a|an|very|once)\b/gi.test(textLower);
+  const hasDescriptiveLanguage = /\b(very|quite|really|extremely|once|when|after|before|during)\b/gi.test(textLower);
+  
+  if (!hasPetContent) {
+    // 如果文本较长且有基本英文结构和描述性语言，认为是有效的
+    if (cleaned.length > 30 && hasBasicEnglishStructure && hasDescriptiveLanguage) {
+      console.log('✅ 文本通过英文结构和描述性语言检测');
+      return { isValid: true, text: cleaned };
+    }
+    
+    // 对于短文本，更严格一些
+    if (cleaned.length < 50) {
+      return { isValid: false, reason: 'No pet-related content detected', text: cleaned };
+    }
+    
+    // 中等长度的文本，如果有基本结构就接受
+    if (cleaned.length >= 50 && hasBasicEnglishStructure) {
+      console.log('✅ 中等长度文本通过基本结构检测');
+      return { isValid: true, text: cleaned };
+    }
   }
   
   return { isValid: true, text: cleaned };
