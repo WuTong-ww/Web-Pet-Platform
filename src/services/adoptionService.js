@@ -326,9 +326,9 @@ if (!finalType || finalType === 'Pet') {
       organization: '香港愛護動物協會'
     },
     publishedAt: spcaAnimal.publishedAt || new Date().toISOString(),
-    popularity: Math.floor(Math.random() * 100) + 1,
-    viewCount: Math.floor(Math.random() * 500) + 50,
-    favoriteCount: Math.floor(Math.random() * 100) + 20,
+    popularity: 0,
+    viewCount: 0,
+    favoriteCount: 0,
     adoptionCenter: spcaAnimal.centre || '香港愛護動物協會',
     postedDate: new Date(spcaAnimal.publishedAt || Date.now()),
     source: 'spca',
@@ -607,9 +607,9 @@ const transformPetfinderAnimal = (animal) => {
     // 其他信息
     publishedAt: animal.published_at,
     distance: animal.distance,
-    popularity: Math.floor(Math.random() * 100) + 1,
-    viewCount: Math.floor(Math.random() * 1000) + 100,
-    favoriteCount: Math.floor(Math.random() * 200) + 50,
+    popularity: 0,
+    viewCount: 0,
+    favoriteCount: 0,
     adoptionCenter: '通过 Petfinder',
     postedDate: new Date(animal.published_at),
     source: 'petfinder',
@@ -1251,9 +1251,9 @@ const generateMockPets = (count = 10, filters = {}) => {
         organization: '模拟收容组织'
       },
       publishedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-      popularity: Math.floor(Math.random() * 100) + 1,
-      viewCount: Math.floor(Math.random() * 500) + 50,
-      favoriteCount: Math.floor(Math.random() * 100) + 20,
+      popularity: 0,
+      viewCount: 0,
+      favoriteCount: 0,
       adoptionCenter: '模拟收容中心',
       postedDate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
       source: 'mock'

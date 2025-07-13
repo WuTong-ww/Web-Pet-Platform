@@ -5,7 +5,6 @@ import clsx from 'clsx';
 
 // 导入各个组件
 import { RealTimeDataProvider, useRealTimeData } from './contexts/RealTimeDataContext';
-import PopularityRanking from './components/adoption/PopularityRanking';
 import AdoptionFilter from './components/adoption/AdoptionFilter';
 import PetActivityMap from './components/maps/PetActivityMap';
 import PetImage from './components/common/PetImage';
@@ -28,36 +27,7 @@ const RealTimeStats = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const statsData = [
-    {
-      title: "待领养宠物",
-      value: globalStats.totalPets,
-      icon: "🐕",
-      color: "bg-blue-500",
-      change: "+12"
-    },
-    {
-      title: "今日成功领养",
-      value: globalStats.adoptedToday,
-      icon: "❤️",
-      color: "bg-green-500",
-      change: "+5"
-    },
-    {
-      title: "活跃用户",
-      value: globalStats.activeUsers,
-      icon: "👥",
-      color: "bg-purple-500",
-      change: "+8"
-    },
-    {
-      title: "成功率",
-      value: `${globalStats.successRate}%`,
-      icon: "📈",
-      color: "bg-orange-500",
-      change: "+2%"
-    }
-  ];
+  
 
   return (
     <div className="mb-8">
@@ -82,28 +52,7 @@ const RealTimeStats = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsData.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-              </div>
-              <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center text-white text-xl`}>
-                {stat.icon}
-              </div>
-            </div>
-            <div className="flex items-center">
-              <span className="text-green-600 text-sm font-medium">{stat.change}</span>
-              <span className="text-gray-500 text-sm ml-2">较昨日</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      
     </div>
   );
 };
@@ -144,15 +93,9 @@ const PetCard = ({ pet, rank, onClick }) => {
         </div>
         
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-lg text-gray-900">{pet.name}</h3>
-            <div className="flex items-center space-x-2">
-              <span className="text-orange-500">🔥</span>
-              <span className="text-sm font-semibold text-orange-500">{pet.popularity}%</span>
-            </div>
-          </div>
           
-          <p className="text-gray-600 mb-2">{pet.breed} • {pet.age}</p>
+          
+          <p className="text-gray-600 mb-2">{pet.name} • {pet.age}</p>
           
           <div className="flex items-center text-sm text-gray-500 mb-3">
             <span className="mr-1">📍</span>
@@ -182,14 +125,8 @@ const PetCard = ({ pet, rank, onClick }) => {
           
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <div className="flex items-center">
-                <span className="mr-1">👁️</span>
-                <span>{pet.viewCount}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="mr-1">❤️</span>
-                <span>{pet.favoriteCount}</span>
-              </div>
+              
+              
             </div>
             <span className="text-xs text-gray-400">
               {formatTimeAgo(pet.postedDate)}
@@ -578,8 +515,7 @@ const PetDetailModal = ({ pet, onClose }) => {
               
               <div className="mt-4 text-xs text-gray-500">
                 发布时间: {format(pet.postedDate, 'yyyy-MM-dd HH:mm')} | 
-                浏览量: {pet.viewCount} | 
-                收藏: {pet.favoriteCount}
+                
               </div>
             </div>
           </div>
@@ -592,7 +528,7 @@ const PetDetailModal = ({ pet, onClose }) => {
 // AI助手组件
 const AIAssistant = () => {
   const [messages, setMessages] = useState([
-    { type: 'bot', content: '您好！我是PetConnect AI助手，我可以帮您解答宠物相关问题。请问有什么可以帮助您的吗？' }
+    { type: 'bot', content: '您好！我是Petpet AI助手，我可以帮您解答宠物相关问题。请问有什么可以帮助您的吗？' }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -717,7 +653,6 @@ const AppContent = () => {
 
   const { 
     adoptablePets, 
-    popularPets, 
     adoptionFeed, 
     nearbyActivities, 
     filters, 
@@ -813,7 +748,6 @@ const AppContent = () => {
 
   const navItems = [
     { key: 'home', label: '首页', icon: '🏠' },
-    { key: 'search', label: '搜索', icon: '🔍' },
     { key: 'recommend', label: '地区推荐', icon: '🌎' },
     { key: 'map', label: '地图', icon: '🗺️' },
     { key: 'admin', label: '管理', icon: '📊' },
@@ -874,48 +808,86 @@ const AppContent = () => {
                 </div>
               )}
             </div>
+{/* 搜索和筛选区域 */}
+<div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">🔍 宠物搜索与浏览</h2>
+                <button 
+                  onClick={() => setShowFilter(true)}
+                  className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                >
+                  🎛️ 高级筛选
+                </button>
+              </div>
+              
+              {searchQuery && (
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-blue-700">
+                    搜索关键词: "<strong>{searchQuery}</strong>" | 
+                    找到 {adoptablePets.length} 只宠物
+                  </p>
+                </div>
+              )}
+              
+              {/* 当前筛选条件显示 */}
+              <div className="mb-4 text-sm text-gray-600">
+                当前筛选条件: 
+                {filters.type !== 'all' && <span className="ml-2 px-2 py-1 bg-gray-100 rounded">类型: {filters.type}</span>}
+                {filters.location && <span className="ml-2 px-2 py-1 bg-gray-100 rounded">地区: {filters.location}</span>}
+                {filters.breed && <span className="ml-2 px-2 py-1 bg-gray-100 rounded">品种: {filters.breed}</span>}
+                {filters.age && <span className="ml-2 px-2 py-1 bg-gray-100 rounded">年龄: {filters.age}</span>}
+                {filters.size && <span className="ml-2 px-2 py-1 bg-gray-100 rounded">体型: {filters.size}</span>}
+                {filters.gender && <span className="ml-2 px-2 py-1 bg-gray-100 rounded">性别: {filters.gender}</span>}
+                {Object.keys(filters).length === 1 && filters.type === 'all' && (
+                  <span className="ml-2 text-gray-400">无筛选条件</span>
+                )}
+              </div>
+              
+              {/* 显示爬取状态 */}
+              {crawlStatus.lastCrawlTime && (
+                <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                  <p className="text-green-700 text-sm">
+                    📡 最近更新: {crawlStatus.lastCrawlTime.toLocaleString('zh-CN')} | 
+                    新增 {crawlStatus.lastCrawlCount} 条数据
+                  </p>
+                </div>
+              )}
+            </div>
             
-            <div className="grid lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    🔥 热门宠物 
-                    <span className="text-sm font-normal text-gray-500 ml-2">
-                      (显示前 15 只)
-                    </span>
-                  </h2>
-                  <button 
-                    onClick={() => setShowFilter(true)}
-                    className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    筛选
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {popularPets.slice(0, 15).map((pet, index) => (
-                    <PetCard 
-                      key={pet.id} 
-                      pet={pet} 
-                      rank={index + 1}
-                      onClick={handlePetClick}
-                    />
-                  ))}
-                </div>
-                
-                <div className="text-center">
+            
+            {/* 宠物列表 - 直接显示 */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  🐾 待领养宠物
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    (共 {pagination.totalCount} 只)
+                  </span>
+                </h3>
+                <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => setCurrentView('search')}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all transform hover:scale-105"
+                    onClick={handleRefresh}
+                    disabled={isLoading}
+                    className={clsx(
+                      "px-3 py-1 text-sm rounded-lg transition-colors",
+                      isLoading 
+                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    )}
                   >
-                    查看全部 {pagination.totalCount} 只宠物 →
+                    {isLoading ? '🔄 刷新中...' : '🔄 刷新'}
                   </button>
                 </div>
               </div>
               
-              <div className="space-y-6">
-                <PopularityRanking pets={popularPets.slice(0, 10)} />
-              </div>
+              <PetList
+                pets={adoptablePets}
+                onPetClick={handlePetClick}
+                pagination={pagination}
+                onLoadMore={handleLoadMore}
+                onRefresh={handleRefresh}
+                isLoading={isLoading}
+              />
             </div>
           </div>
         );
@@ -1098,10 +1070,10 @@ const AppContent = () => {
             <div className="flex items-center space-x-2">
               <span className="text-2xl">🐾</span>
               <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                PetConnect
+                Petpet
               </span>
               <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                v2.0
+                v1.0.0
               </span>
             </div>
             

@@ -17,10 +17,10 @@ const Header = ({ onSearch, isLoading = false }) => {
           <div className="flex items-center space-x-2">
             <span className="text-2xl">🐾</span>
             <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              PetConnect
+              Petpet
             </span>
             <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-              v2.0
+              v1.0.0
             </span>
           </div>
           

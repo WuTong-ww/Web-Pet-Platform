@@ -101,9 +101,7 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
           ))}
         </div>
         
-        <div className="text-center text-sm text-gray-500">
-          数据统计: 全球共有 {globalStats.totalPets} 只宠物等待领养 | 今日成功领养 {globalStats.adoptedToday} 只
-        </div>
+        
       </div>
       
       {/* 加载中状态 */}
