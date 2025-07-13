@@ -14,6 +14,9 @@ import LocationBasedRecommendations from './components/location/LocationBasedRec
 import RegionDetail from './pages/RegionDetail';
 import { fetchPetfinderPetById } from './services/adoptionService';
 import { cleanText, formatDescription } from './utils/textUtils';
+import NearbyPlaces from './components/maps/NearbyPlaces';
+
+
 
 // 实时统计组件
 const RealTimeStats = () => {
@@ -109,7 +112,7 @@ const PetCard = ({ pet, rank, onClick }) => {
             )}>
               {pet.source === 'petfinder' && 'Petfinder'}
               {pet.source === 'spca' && 'SPCA香港'}
-              {pet.source === 'mock' && '模拟数据'}
+              {pet.source === '其他'}
             </span>
           </div>
           
@@ -374,11 +377,11 @@ const PetDetailModal = ({ pet, onClose }) => {
                   "px-3 py-1 rounded-full text-sm font-medium",
                   pet.source === 'petfinder' && 'bg-blue-100 text-blue-700',
                   pet.source === 'spca' && 'bg-green-100 text-green-700',
-                  pet.source === 'mock' && 'bg-gray-100 text-gray-700'
+                  pet.source === '其他' && 'bg-gray-100 text-gray-700'
                 )}>
                   {pet.source === 'petfinder' && 'Petfinder API'}
                   {pet.source === 'spca' && '香港愛護動物協會'}
-                  {pet.source === 'mock' && '模拟数据'}
+                  {pet.source === '其他'}
                 </span>
               </div>
             </div>
@@ -701,27 +704,27 @@ const AppContent = () => {
     // 先显示基本信息
     setSelectedPet(pet);
     
-    // 对于 Petfinder 宠物，获取完整详细信息
-    if (pet.source === 'petfinder' && pet.id) {
-      try {
-        setIsLoading(true);
+    // // 对于 Petfinder 宠物，获取完整详细信息
+    // if (pet.source === 'petfinder' && pet.id) {
+    //   try {
+    //     setIsLoading(true);
         
-        console.log('获取宠物详细信息:', pet.id);
-        const detailedPet = await fetchPetfinderPetById(pet.id);
+    //     console.log('获取宠物详细信息:', pet.id);
+    //     const detailedPet = await fetchPetfinderPetById(pet.id);
         
-        if (detailedPet) {
-          console.log('更新宠物详细信息:', detailedPet.name);
-          console.log('描述长度:', detailedPet.description?.length || 0);
+    //     if (detailedPet) {
+    //       console.log('更新宠物详细信息:', detailedPet.name);
+    //       console.log('描述长度:', detailedPet.description?.length || 0);
           
-          // 更新选中的宠物
-          setSelectedPet(detailedPet);
-        }
-      } catch (error) {
-        console.error('获取宠物详细信息失败:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    //       // 更新选中的宠物
+    //       setSelectedPet(detailedPet);
+    //     }
+    //   } catch (error) {
+    //     console.error('获取宠物详细信息失败:', error);
+    //   } finally {
+    //     setIsLoading(false);
+    //   }
+    // }
   };
 
   const handleLoadMore = async () => {
@@ -962,8 +965,29 @@ const AppContent = () => {
         return (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">🗺️ 宠物活动地图</h2>
-              <p className="text-gray-600 mb-4">查看附近的宠物收容所、领养活动和宠物服务</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">🗺️ 宠物友好场所地图</h2>
+              <p className="text-gray-600 mb-4">找到您附近的宠物医院、宠物店、宠物公园等宠物友好场所，为您的毛孩子提供最好的服务。</p>
+               {/* 功能特色 */}
+               <div className="grid md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-2xl mb-2">🏥</div>
+                  <h4 className="font-medium text-blue-900">宠物医院</h4>
+                  <p className="text-sm text-blue-700">24小时宠物医疗服务</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-2xl mb-2">🏪</div>
+                  <h4 className="font-medium text-green-900">宠物用品店</h4>
+                  <p className="text-sm text-green-700">宠物食品和用品采购</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-2xl mb-2">🌳</div>
+                  <h4 className="font-medium text-purple-900">宠物公园</h4>
+                  <p className="text-sm text-purple-700">宠物休闲娱乐场所</p>
+                </div>
+              </div>
+              {/* 地图组件 */}
+            <NearbyPlaces />
+            
               <PetActivityMap activities={nearbyActivities} />
             </div>
           </div>
@@ -1077,23 +1101,11 @@ const AppContent = () => {
               </span>
             </div>
             
-            <form onSubmit={handleSearch} className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="搜索宠物、品种、地区..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-                {isLoading && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
-              </div>
-            </form>
+            <div className="flex-1 max-w-md mx-8 text-center">
+              <p className="text-gray-600 font-medium">
+                ♥领养代替购买，愿您和它都能找到合适的家人♥
+              </p>
+            </div>
             
             <div className="flex items-center space-x-4">
               <button 
@@ -1103,15 +1115,6 @@ const AppContent = () => {
                 disabled={isLoading}
               >
                 <span className={isLoading ? 'animate-spin' : ''}>🔄</span>
-              </button>
-              <button className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors">
-                🔔
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {adoptionFeed.length}
-                </span>
-              </button>
-              <button className="p-2 text-gray-600 hover:text-purple-600 transition-colors">
-                👤
               </button>
             </div>
           </div>
