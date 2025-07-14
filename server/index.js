@@ -4,6 +4,15 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 
+// 在文件顶部添加ECNU API配置
+const ECNU_API_CONFIG = {
+  baseURL: 'https://chat.ecnu.edu.cn/open/api/v1',
+  apiKey: process.env.ECNU_API_KEY || 'sk-c83a6cc7486547f08dd974beeb919d87', // 从环境变量获取
+  model: 'ecnu-plus',
+  timeout: 30000
+};
+
+
 // 导入爬虫模块
 //const { crawlSzadoptPet } = require("./crawler/szadopt");
 const { crawlSpcaPets, resetCrawlState, getCrawlStatus } = require("./crawler/spca");
@@ -22,6 +31,90 @@ app.use(express.json());
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
   next();
+});
+
+// 添加ECNU API代理 - 现在 app 已经初始化了
+app.post("/api/ecnu/chat/completions", async (req, res) => {
+  try {
+    console.log("🤖 正在调用ECNU大模型API...");
+    
+    const { messages, temperature, max_tokens, model } = req.body;
+    
+    // 验证请求参数
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({
+        status: "error",
+        message: "缺少或无效的消息参数"
+      });
+    }
+    
+    // 构建请求数据
+    const requestData = {
+      model: model || ECNU_API_CONFIG.model,
+      messages: messages,
+      temperature: temperature || 0.7,
+      max_tokens: max_tokens || 1000
+    };
+    
+    console.log("📝 ECNU API请求数据:", {
+      model: requestData.model,
+      messageCount: messages.length,
+      temperature: requestData.temperature,
+      max_tokens: requestData.max_tokens
+    });
+    
+    // 调用ECNU API
+    const response = await axios.post(
+      `${ECNU_API_CONFIG.baseURL}/chat/completions`,
+      requestData,
+      {
+        headers: {
+          'Authorization': `Bearer ${ECNU_API_CONFIG.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: ECNU_API_CONFIG.timeout
+      }
+    );
+    
+    console.log("✅ ECNU API调用成功");
+    
+    // 返回响应
+    res.json(response.data);
+    
+  } catch (error) {
+    console.error("❌ ECNU API调用失败:", error.message);
+    
+    let errorMessage = "ECNU API调用失败";
+    let statusCode = 500;
+    
+    if (error.response) {
+      statusCode = error.response.status;
+      errorMessage = `ECNU API错误: ${error.response.status}`;
+      
+      if (error.response.status === 401) {
+        errorMessage = "ECNU API认证失败，请检查API密钥";
+      } else if (error.response.status === 403) {
+        errorMessage = "ECNU API访问被拒绝";
+      } else if (error.response.status === 429) {
+        errorMessage = "ECNU API请求过于频繁";
+      }
+      
+      console.error("   ECNU API响应:", error.response.data);
+    } else if (error.code === 'ECONNABORTED') {
+      errorMessage = "ECNU API请求超时";
+      statusCode = 408;
+    } else if (error.code === 'ENOTFOUND') {
+      errorMessage = "无法连接到ECNU服务器";
+      statusCode = 503;
+    }
+    
+    res.status(statusCode).json({
+      status: "error",
+      message: errorMessage,
+      error: error.message,
+      details: error.response?.data
+    });
+  }
 });
 
 // 健康检查

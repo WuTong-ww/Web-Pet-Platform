@@ -19,7 +19,8 @@ import { PetProfileProvider } from './contexts/PetProfileContext';
 import PetProfileManager from './components/profiles/PetProfileManager';
 import FavoriteManager from './components/favorites/FavoriteManager';
 import { FavoriteProvider, useFavorite } from './contexts/FavoriteContext';
-
+import { AIProvider } from './contexts/AIContext';
+import AIAssistant from './components/ai/AIAssistant'; 
 // 实时统计组件
 const RealTimeStats = () => {
   const { globalStats, connectionStatus, refreshStats } = useRealTimeData();
@@ -544,123 +545,7 @@ const PetDetailModal = ({ pet, onClose }) => {
   );
 };
 
-// AI助手组件
-const AIAssistant = () => {
-  const [messages, setMessages] = useState([
-    { type: 'bot', content: '您好！我是Petpet AI助手，我可以帮您解答宠物相关问题。请问有什么可以帮助您的吗？' }
-  ]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputMessage.trim()) return;
-
-    const userMessage = { type: 'user', content: inputMessage };
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
-    setIsTyping(true);
-
-    // 模拟AI响应
-    setTimeout(() => {
-      const responses = [
-        '这是一个很好的问题！根据我的知识，建议您...',
-        '对于这种情况，我建议您首先...',
-        '这个问题需要考虑宠物的具体情况...',
-        '建议您咨询专业的宠物医生，同时...'
-      ];
-      
-      const botResponse = { 
-        type: 'bot', 
-        content: responses[Math.floor(Math.random() * responses.length)] 
-      };
-      
-      setMessages(prev => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">🤖 AI宠物助手</h2>
-        <p className="text-gray-600 mb-6">
-          我可以帮您解答宠物饲养、训练、健康等问题，也可以分析宠物照片来评估状态。
-        </p>
-        
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          <button className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-left">
-            <div className="text-2xl mb-2">🐕</div>
-            <div className="font-medium">宠物健康咨询</div>
-            <div className="text-sm text-gray-600">健康问题解答</div>
-          </button>
-          <button className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors text-left">
-            <div className="text-2xl mb-2">🎓</div>
-            <div className="font-medium">训练建议</div>
-            <div className="text-sm text-gray-600">行为训练指导</div>
-          </button>
-          <button className="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-left">
-            <div className="text-2xl mb-2">📸</div>
-            <div className="font-medium">照片分析</div>
-            <div className="text-sm text-gray-600">宠物状态评估</div>
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-lg">
-        <div className="h-96 overflow-y-auto p-6 space-y-4">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.type === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {message.content}
-              </div>
-            </div>
-          ))}
-          
-          {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 px-4 py-2 rounded-lg">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        <form onSubmit={handleSendMessage} className="p-4 border-t">
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="请输入您的问题..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button
-              type="submit"
-              disabled={!inputMessage.trim() || isTyping}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              发送
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
 
 // 主应用内容组件
 const AppContent = () => {
@@ -1238,7 +1123,9 @@ function App() {
   return (
     <RealTimeDataProvider>
       <FavoriteProvider>
-        <AppContent />
+      <AIProvider> 
+          <AppContent />
+        </AIProvider>
       </FavoriteProvider>
     </RealTimeDataProvider>
   );
