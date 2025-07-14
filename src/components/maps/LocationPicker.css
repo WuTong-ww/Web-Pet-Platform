@@ -263,3 +263,72 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+.search-results-header {
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
+  color: #666;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+  background-color: #f9f9f9;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.place-info {
+  flex: 1;
+}
+
+.place-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.place-address {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.place-district {
+  color: #888;
+  font-size: 12px;
+}
+
+.place-type {
+  color: #007bff;
+  font-size: 12px;
+  background: #e3f2fd;
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.place-location {
+  margin-left: 12px;
+}
+
+.location-available {
+  color: #4caf50;
+}
+
+.location-need-geocode {
+  color: #ff9800;
+}

@@ -538,10 +538,14 @@ export const fetchPlaceDetails = async (placeId) => {
  */
 export const geocode = async (address) => {
   try {
+    console.log('🌐 地理编码:', address);
+    
     // 使用静态地图密钥
     const url = `${AMAP_CONFIG.webServiceUrl}/geocode/geo?key=${AMAP_CONFIG.staticKey}&address=${encodeURIComponent(address)}`;
     const response = await fetch(url);
     const data = await response.json();
+    
+    console.log('🌐 地理编码API响应:', data);
     
     if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
       const result = data.geocodes[0];
@@ -680,14 +684,18 @@ const fallbackReverseGeocode = async (latitude, longitude) => {
 };
 
 /**
- * 搜索地点
+ * 搜索地点 - 改进版本
  */
 export const searchPlaces = async (query, city = '') => {
   try {
+    console.log('🔍 搜索地点:', query, '城市:', city);
+    
     const url = `${AMAP_CONFIG.webServiceUrl}/place/text?key=${AMAP_CONFIG.staticKey}&keywords=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&offset=20&page=1&extensions=all`;
     
     const response = await fetch(url);
     const data = await response.json();
+    
+    console.log('📍 搜索API响应:', data);
     
     if (data.status === '1' && data.pois && data.pois.length > 0) {
       return data.pois.map(poi => {
@@ -698,6 +706,7 @@ export const searchPlaces = async (query, city = '') => {
           address: poi.address,
           latitude: lat,
           longitude: lng,
+          location: poi.location, // 保留原始location格式
           city: poi.cityname,
           district: poi.adname,
           province: poi.pname,
@@ -716,14 +725,18 @@ export const searchPlaces = async (query, city = '') => {
 };
 
 /**
- * 输入提示
+ * 输入提示 - 改进版本
  */
 export const inputTips = async (keywords, city = '') => {
   try {
-    const url = `${AMAP_CONFIG.webServiceUrl}/assistant/inputtips?key=${AMAP_CONFIG.staticKey}&keywords=${encodeURIComponent(keywords)}&city=${encodeURIComponent(city)}`;
+    console.log('💡 输入提示:', keywords, '城市:', city);
+    
+    const url = `${AMAP_CONFIG.webServiceUrl}/assistant/inputtips?key=${AMAP_CONFIG.staticKey}&keywords=${encodeURIComponent(keywords)}&city=${encodeURIComponent(city)}&citylimit=true`;
     
     const response = await fetch(url);
     const data = await response.json();
+    
+    console.log('💡 输入提示API响应:', data);
     
     if (data.status === '1' && data.tips && data.tips.length > 0) {
       return data.tips.map(tip => ({
@@ -731,7 +744,7 @@ export const inputTips = async (keywords, city = '') => {
         name: tip.name,
         district: tip.district,
         adcode: tip.adcode,
-        location: tip.location || '',
+        location: tip.location || '', // 确保location字段存在
         address: tip.address,
         typecode: tip.typecode
       }));

@@ -77,7 +77,7 @@ const DynamicMap = ({
         viewMode: "2D", // 2D地图模式
         zoom: zoom, // 初始化地图级别
         center: centerCoord, // 初始化地图中心点位置
-        mapStyle: 'amap://styles/normal',
+        mapStyle: 'amap://styles/fresh',
         scrollWheel: true,
         dragEnable: true,
         zoomEnable: true,
@@ -128,36 +128,62 @@ const DynamicMap = ({
     }
   };
 
-  // 更新标记
-  const updateMarkers = (AMap) => {
-    if (!mapInstanceRef.current || !showMarkers || !mountedRef.current) {
-      return;
+  // 创建emoji风格的图标函数
+const createEmojiIcon = (emoji, size = 48) => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  canvas.width = size;
+  canvas.height = size;
+  
+  // 设置字体和样式
+  ctx.font = `${size * 0.8}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // 绘制emoji
+  ctx.fillText(emoji, size / 2, size / 2);
+  
+  return canvas.toDataURL();
+};
+
+  // 修改 updateMarkers 函数
+const updateMarkers = (AMap) => {
+  if (!mapInstanceRef.current || !showMarkers || !mountedRef.current) {
+    return;
+  }
+
+  console.log('🔄 开始更新地图标记');
+  console.log('📍 当前位置:', location);
+  console.log('🏢 场所数量:', places.length);
+
+  // 清除现有标记
+  markersRef.current.forEach(marker => {
+    try {
+      mapInstanceRef.current.remove(marker);
+    } catch (e) {
+      console.warn('清除标记失败:', e);
     }
+  });
+  markersRef.current = [];
 
-    // 清除现有标记
-    markersRef.current.forEach(marker => {
-      try {
-        mapInstanceRef.current.remove(marker);
-      } catch (e) {
-        console.warn('清除标记失败:', e);
-      }
-    });
-    markersRef.current = [];
-
-    // 添加当前位置标记
-    if (location) {
+  // 添加当前位置标记
+  if (location) {
+    try {
       const currentLocationMarker = new AMap.Marker({
         position: [location.longitude, location.latitude],
         title: '当前位置',
         icon: new AMap.Icon({
-          image: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-red.png',
-          size: new AMap.Size(25, 35),
-          imageSize: new AMap.Size(25, 35)
+          image: createEmojiIcon('📍', 48),
+          size: new AMap.Size(48, 48),
+          imageSize: new AMap.Size(48, 48),
+          imageOffset: new AMap.Pixel(-24, -24) // 居中显示
         })
       });
 
       markersRef.current.push(currentLocationMarker);
       mapInstanceRef.current.add(currentLocationMarker);
+      console.log('✅ 当前位置标记添加成功');
 
       // 添加信息窗体
       if (showInfoWindow && infoWindowRef.current) {
@@ -172,17 +198,74 @@ const DynamicMap = ({
           infoWindowRef.current.open(mapInstanceRef.current, currentLocationMarker.getPosition());
         });
       }
+    } catch (error) {
+      console.error('❌ 当前位置标记创建失败:', error);
     }
+  }
 
-    // 添加场所标记
-    places.forEach((place) => {
+  // 获取宠物场所对应的emoji
+  const getPlaceEmoji = (placeType) => {
+    const emojiMap = {
+      '宠物医院': '🏥',
+      '宠物店': '🏪',
+      '宠物美容': '✂️',
+      '宠物公园': '🌳',
+      '宠物咖啡': '☕',
+      '动物医院': '🏥',
+      '宠物用品店': '🛍️',
+      '宠物诊所': '⚕️',
+      '宠物训练': '🎓',
+      '宠物酒店': '🏨',
+      '宠物寄养': '🏠',
+      '宠物游乐园': '🎡',
+      '宠物餐厅': '🍽️',
+      '宠物摄影': '📸',
+      '宠物洗浴': '🛁',
+      '宠物托管': '🏢',
+      '宠物SPA': '💆',
+      '宠物运动': '⚽',
+      '宠物乐园': '🎪',
+      '宠物会所': '🎭'
+    };
+    
+    // 匹配类型关键词
+    for (const [key, emoji] of Object.entries(emojiMap)) {
+      if (placeType.includes(key)) {
+        return emoji;
+      }
+    }
+    
+    return '🐾'; // 默认宠物图标
+  };
+
+  // 添加场所标记
+  let successCount = 0;
+  places.forEach((place, index) => {
+    try {
+      // 验证场所数据
+      if (!place.latitude || !place.longitude) {
+        console.warn('⚠️ 场所缺少经纬度信息:', place);
+        return;
+      }
+
+      if (isNaN(place.latitude) || isNaN(place.longitude)) {
+        console.warn('⚠️ 场所经纬度无效:', place);
+        return;
+      }
+
+      console.log(`📍 创建场所标记: ${place.name} (${place.latitude}, ${place.longitude})`);
+
+      // 获取对应的emoji
+      const emoji = getPlaceEmoji(place.type);
+      
       const placeMarker = new AMap.Marker({
         position: [place.longitude, place.latitude],
         title: place.name,
         icon: new AMap.Icon({
-          image: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-blue.png',
-          size: new AMap.Size(25, 35),
-          imageSize: new AMap.Size(25, 35)
+          image: createEmojiIcon(emoji, 36),
+          size: new AMap.Size(36, 36),
+          imageSize: new AMap.Size(36, 36),
+          imageOffset: new AMap.Pixel(-18, -18) // 居中显示
         })
       });
 
@@ -198,7 +281,7 @@ const DynamicMap = ({
         placeMarker.on('click', () => {
           infoWindowRef.current.setContent(`
             <div style="padding: 10px; max-width: 200px;">
-              <h4>🐾 ${place.name}</h4>
+              <h4>${emoji} ${place.name}</h4>
               <p><strong>类型:</strong> ${place.type}</p>
               <p><strong>距离:</strong> ${place.distance}</p>
               <p><strong>评分:</strong> ${place.rating}⭐</p>
@@ -213,8 +296,16 @@ const DynamicMap = ({
 
       markersRef.current.push(placeMarker);
       mapInstanceRef.current.add(placeMarker);
-    });
-  };
+      successCount++;
+      console.log(`✅ 场所标记创建成功: ${place.name} (${emoji})`);
+
+    } catch (error) {
+      console.error(`❌ 场所标记创建失败: ${place.name}`, error);
+    }
+  });
+
+  console.log(`🎯 标记创建完成: ${successCount}/${places.length} 个场所标记成功创建`);
+};
 
   // 更新地图中心
   const updateMapCenter = () => {

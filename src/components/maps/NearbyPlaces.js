@@ -456,22 +456,7 @@ const NearbyPlaces = () => {
                   </div>
                 )}
                 
-                {selectedPlace.reviews && selectedPlace.reviews.length > 0 && (
-                  <div className="detail-row">
-                    <strong>用户评价：</strong>
-                    <div className="reviews">
-                      {selectedPlace.reviews.map((review, index) => (
-                        <div key={index} className="review">
-                          <div className="review-header">
-                            <span className="reviewer">{review.user}</span>
-                            <span className="rating">{review.rating}⭐</span>
-                          </div>
-                          <p className="review-text">{review.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                
               </div>
             </div>
             
