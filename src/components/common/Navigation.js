@@ -10,7 +10,6 @@ const Navigation = () => {
     { key: 'search', label: '搜索', icon: '🔍', path: '/search' },
     { key: 'recommend', label: '地区推荐', icon: '🌎', path: '/recommend' },
     { key: 'map', label: '地图', icon: '🗺️', path: '/map' },
-    { key: 'admin', label: '管理', icon: '📊', path: '/admin' },
     { key: 'profile', label: '档案', icon: '👤', path: '/profile' },
     { key: 'ai', label: 'AI助手', icon: '🤖', path: '/ai' }
   ];

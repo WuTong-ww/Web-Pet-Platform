@@ -15,6 +15,8 @@ import RegionDetail from './pages/RegionDetail';
 import { fetchPetfinderPetById } from './services/adoptionService';
 import { cleanText, formatDescription } from './utils/textUtils';
 import NearbyPlaces from './components/maps/NearbyPlaces';
+import { PetProfileProvider } from './contexts/PetProfileContext';
+import PetProfileManager from './components/profiles/PetProfileManager';
 
 
 
@@ -653,6 +655,7 @@ const AppContent = () => {
   const [selectedPet, setSelectedPet] = useState(null);
   const [showFilter, setShowFilter] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [profileView, setProfileView] = useState('main'); // 新增：管理档案视图状态
 
   const { 
     adoptablePets, 
@@ -753,7 +756,6 @@ const AppContent = () => {
     { key: 'home', label: '首页', icon: '🏠' },
     { key: 'recommend', label: '地区推荐', icon: '🌎' },
     { key: 'map', label: '地图', icon: '🗺️' },
-    { key: 'admin', label: '管理', icon: '📊' },
     { key: 'profile', label: '档案', icon: '👤' },
     { key: 'ai', label: 'AI助手', icon: '🤖' }
   ];
@@ -993,87 +995,90 @@ const AppContent = () => {
           </div>
         );
 
-      case 'admin':
-        return <DataManagement />;
+      
 
       case 'profile':
         return (
           <div className="space-y-6">
-            {/* 数据管理区域 */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 数据管理</h2>
-              
-              <CrawlButton
-                onCrawlStart={() => setIsLoading(true)}
-                onCrawlComplete={handleCrawlComplete}
-                onCrawlError={handleCrawlError}
-                disabled={isLoading}
-              />
-              
-              {/* 数据统计 */}
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900">总宠物数</h4>
-                  <p className="text-2xl font-bold text-blue-600">{pagination.totalCount}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-green-900">今日新增</h4>
-                  <p className="text-2xl font-bold text-green-600">{crawlStatus.lastCrawlCount || 0}</p>
-                </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-purple-900">最近更新</h4>
-                  <p className="text-sm text-purple-600">
-                    {crawlStatus.lastCrawlTime ? 
-                      crawlStatus.lastCrawlTime.toLocaleString('zh-CN') : 
-                      '暂无数据'
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">👤 我的档案</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📋</div>
-                  <div className="text-gray-500 mb-4">宠物档案管理</div>
-                  <p className="text-gray-400 mb-4">您可以在这里管理您的宠物健康档案、疫苗记录等</p>
-                  <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    创建宠物档案
-                  </button>
-                </div>
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">❤️</div>
-                  <div className="text-gray-500 mb-4">我的收藏</div>
-                  <p className="text-gray-400 mb-4">查看您收藏的宠物和关注的领养信息</p>
-                  <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                    查看收藏
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">最近活动</h3>
-              <div className="space-y-3">
-                {adoptionFeed.slice(0, 5).map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="text-2xl">
-                      {activity.type === 'adoption' && '💖'}
-                      {activity.type === 'rescue' && '🆘'}
-                      {activity.type === 'medical' && '🏥'}
+            {/* 档案功能导航 */}
+            {profileView === 'main' && (
+              <>
+                {/* 功能选择界面 */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">👤 我的档案中心</h2>
+                  <p className="text-gray-600 mb-8">管理您的宠物档案、健康记录和营养计划</p>
+                  
+                  {/* 主要功能卡片 */}
+                  <div className="grid md:grid-cols-2 gap-6 mb-8">
+                    <div 
+                      className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105"
+                      onClick={() => setProfileView('pet-profiles')}
+                    >
+                      <div className="flex items-center mb-4">
+                        <div className="text-4xl mr-4">📋</div>
+                        <div>
+                          <h3 className="text-xl font-bold text-blue-900">宠物档案管理</h3>
+                          <p className="text-blue-700">健康档案 • 营养计划 • 医疗记录</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-600">创建和管理您的宠物档案</span>
+                        <span className="text-blue-600">→</span>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{activity.message}</p>
-                      <p className="text-xs text-gray-500">
-                        {format(activity.timestamp, 'MM-dd HH:mm')} • {activity.location}
-                      </p>
+                    
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105">
+                      <div className="flex items-center mb-4">
+                        <div className="text-4xl mr-4">❤️</div>
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-900">我的收藏</h3>
+                          <p className="text-purple-700">收藏的宠物 • 关注的领养信息</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-purple-600">查看收藏的宠物和领养信息</span>
+                        <span className="text-purple-600">→</span>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* 数据管理区域 */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 数据管理</h2>
+                  
+                  <CrawlButton
+                    onCrawlStart={() => setIsLoading(true)}
+                    onCrawlComplete={handleCrawlComplete}
+                    onCrawlError={handleCrawlError}
+                    disabled={isLoading}
+                  />
+                </div>
+                
+               
+              </>
+            )}
+
+            {/* 宠物档案管理视图 */}
+            {profileView === 'pet-profiles' && (
+              <div className="space-y-6">
+                {/* 返回按钮 */}
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setProfileView('main')}
+                    className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    <span className="mr-2">←</span>
+                    返回档案中心
+                  </button>
+                </div>
+
+                {/* 使用PetProfileProvider包装宠物档案管理组件 */}
+                <PetProfileProvider>
+                  <PetProfileManager />
+                </PetProfileProvider>
               </div>
-            </div>
+            )}
           </div>
         );
 
@@ -1132,7 +1137,13 @@ const AppContent = () => {
           {navItems.map(({ key, icon, label }) => (
             <button
               key={key}
-              onClick={() => setCurrentView(key)}
+              onClick={() => {
+                setCurrentView(key);
+                // 如果切换到档案页面，重置为主视图
+                if (key === 'profile') {
+                  setProfileView('main');
+                }
+              }}
               className={clsx(
                 "flex flex-col items-center space-y-1 p-2 transition-colors relative",
                 currentView === key ? 'text-purple-600' : 'text-gray-600'
@@ -1145,11 +1156,7 @@ const AppContent = () => {
                   {adoptablePets.length > 99 ? '99+' : adoptablePets.length}
                 </span>
               )}
-              {key === 'admin' && crawlStatus.lastCrawlTime && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center">
-                  ✓
-                </span>
-              )}
+              
             </button>
           ))}
         </div>
