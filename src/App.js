@@ -21,6 +21,8 @@ import FavoriteManager from './components/favorites/FavoriteManager';
 import { FavoriteProvider, useFavorite } from './contexts/FavoriteContext';
 import { AIProvider } from './contexts/AIContext';
 import AIAssistant from './components/ai/AIAssistant'; 
+import MouseClickEffect from './components/common/MouseClickEffect';
+
 // 实时统计组件
 const RealTimeStats = () => {
   const { globalStats, connectionStatus, refreshStats } = useRealTimeData();
@@ -1019,6 +1021,9 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+      {/* 添加鼠标点击效果 */}
+      <MouseClickEffect />
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       {/* 顶部导航 */}
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1114,6 +1119,7 @@ const AppContent = () => {
           onClose={() => setShowFilter(false)}
         />
       )}
+      </div>
     </div>
   );
 };
