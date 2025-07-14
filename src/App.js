@@ -1103,7 +1103,7 @@ const AppContent = () => {
             
             <div className="flex-1 max-w-md mx-8 text-center">
               <p className="text-gray-600 font-medium">
-                ♥领养代替购买，愿您和它都能找到合适的家人♥
+                ♥专注毛孩子♥
               </p>
             </div>
             

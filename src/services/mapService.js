@@ -2,13 +2,55 @@
 // 高德地图API集成服务
 
 const AMAP_CONFIG = {
-  key: process.env.REACT_APP_AMAP_KEY || '52418d9cff9ca02089028f5861d11696',
+  // 静态地图API密钥（Web服务API）
+  staticKey: process.env.REACT_APP_AMAP_STATIC_KEY || '52418d9cff9ca02089028f5861d11696',
+  
+  // 动态地图API密钥（JS API）
+  dynamicKey: process.env.REACT_APP_AMAP_DYNAMIC_KEY || 'a765f2076d4d2d2e18ff9688fdd6d445',
+  
+  // 安全密钥（仅动态地图使用）
+  securityJsCode: process.env.REACT_APP_AMAP_SECURITY_CODE || 'f18b1ad59c7860dda3b7bbd679ec265c',
+  
   baseUrl: 'https://restapi.amap.com/v3',
   webServiceUrl: 'https://restapi.amap.com/v3'
 };
 
 /**
- * 获取用户当前位置
+ * 检查定位权限
+ */
+export const checkLocationPermission = async () => {
+  if ('permissions' in navigator) {
+    try {
+      const permission = await navigator.permissions.query({name: 'geolocation'});
+      console.log('🔐 定位权限状态:', permission.state);
+      
+      return {
+        state: permission.state,
+        granted: permission.state === 'granted',
+        denied: permission.state === 'denied',
+        prompt: permission.state === 'prompt'
+      };
+    } catch (error) {
+      console.warn('无法查询定位权限:', error);
+      return {
+        state: 'unknown',
+        granted: false,
+        denied: false,
+        prompt: true
+      };
+    }
+  }
+  
+  return {
+    state: 'unsupported',
+    granted: false,
+    denied: false,
+    prompt: true
+  };
+};
+
+/**
+ * 获取用户当前位置 - 优化版本
  */
 export const getCurrentLocation = () => {
   return new Promise((resolve, reject) => {
@@ -17,23 +59,52 @@ export const getCurrentLocation = () => {
       return;
     }
 
+    console.log('🔍 开始获取用户位置...');
+
     const options = {
       enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 300000
+      timeout: 10000, // 减少超时时间
+      maximumAge: 10000 // 减少缓存时间，获取更新的位置
     };
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        console.log('✅ GPS定位成功:', { latitude, longitude, accuracy });
+        
+        // 如果精度太低，提示用户
+        if (accuracy > 100) {
+          console.warn('⚠️ GPS定位精度较低:', accuracy + '米');
+        }
+        
         resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy
+          latitude,
+          longitude,
+          accuracy,
+          source: 'gps'
         });
       },
       (error) => {
-        console.error('定位失败:', error);
-        reject(error);
+        console.error('❌ GPS定位失败:', error);
+        let errorMessage = '定位失败';
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = '用户拒绝了定位权限请求';
+            console.log('💡 提示：请在浏览器中允许定位权限');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = '位置信息不可用';
+            break;
+          case error.TIMEOUT:
+            errorMessage = '定位请求超时';
+            break;
+          default:
+            errorMessage = '未知的定位错误';
+            break;
+        }
+        
+        reject(new Error(errorMessage));
       },
       options
     );
@@ -41,31 +112,170 @@ export const getCurrentLocation = () => {
 };
 
 /**
- * 根据IP获取位置
+ * 获取最佳位置 - 多重定位策略
+ */
+export const getBestLocation = async () => {
+  try {
+    // 首先检查权限
+    const permission = await checkLocationPermission();
+    
+    if (permission.denied) {
+      console.log('🚫 定位权限被拒绝，使用IP定位');
+      return await getLocationByIP();
+    }
+    
+    // 尝试GPS定位
+    console.log('🛰️ 尝试GPS定位...');
+    const gpsLocation = await getCurrentLocation();
+    
+    // 如果GPS精度太低，尝试重新获取
+    if (gpsLocation.accuracy > 100) {
+      console.log('🔄 GPS精度较低，尝试重新获取...');
+      
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const retryLocation = await getCurrentLocation();
+        
+        if (retryLocation.accuracy < gpsLocation.accuracy) {
+          console.log('✅ 重新获取成功，精度提升');
+          return retryLocation;
+        }
+      } catch (retryError) {
+        console.warn('重试GPS定位失败:', retryError);
+      }
+    }
+    
+    return gpsLocation;
+    
+  } catch (error) {
+    console.log('🌐 GPS定位失败，使用IP定位:', error.message);
+    return await getLocationByIP();
+  }
+};
+
+
+/**
+ * 高德地图IP定位 - 优化版本
  */
 export const getLocationByIP = async () => {
   try {
-    const response = await fetch(`${AMAP_CONFIG.webServiceUrl}/ip?key=${AMAP_CONFIG.key}`);
+    console.log('🌐 开始高德地图IP定位...');
+    
+    // 检查API密钥
+    if (!AMAP_CONFIG.staticKey || AMAP_CONFIG.staticKey === 'YOUR_AMAP_KEY') {
+      throw new Error('高德地图API密钥未配置');
+    }
+    
+    const url = `${AMAP_CONFIG.webServiceUrl}/ip?key=${AMAP_CONFIG.staticKey}`;
+    console.log('🔗 IP定位请求URL:', url);
+    
+    const response = await fetch(url);
     const data = await response.json();
+    
+    console.log('📡 高德IP定位响应:', data);
     
     if (data.status === '1' && data.rectangle) {
       // 解析矩形坐标获取中心点
       const coords = data.rectangle.split(';')[0].split(',');
-      return {
+      const result = {
         latitude: parseFloat(coords[1]),
         longitude: parseFloat(coords[0]),
-        accuracy: 10000,
-        city: data.city,
-        province: data.province,
-        adcode: data.adcode,
-        source: 'ip'
+        accuracy: 3000, // IP定位精度
+        city: data.city || '未知城市',
+        province: data.province || '未知省份',
+        adcode: data.adcode || '',
+        country: '中国',
+        source: 'ip_amap'
       };
+      
+      console.log('✅ 高德IP定位成功:', result);
+      return result;
     }
     
-    throw new Error('IP定位失败');
+    // 处理高德API错误
+    if (data.infocode) {
+      const errorMessages = {
+        '10001': 'API密钥无效',
+        '10002': 'API密钥过期',
+        '10003': '访问已超出日配额',
+        '10004': '访问过于频繁',
+        '10005': 'IP白名单错误',
+        '10009': '请求key与绑定平台不符',
+        '10012': '服务不支持https请求',
+        '10013': '权限不足，服务请求被拒绝',
+        '20001': '请求参数非法',
+        '20002': '缺少必填参数',
+        '20003': '请求协议非法',
+        '20011': '请求IP非法',
+        '20012': '请求内容非法'
+      };
+      
+      const errorMsg = errorMessages[data.infocode] || `未知错误 (${data.infocode})`;
+      throw new Error(`高德IP定位失败: ${errorMsg}`);
+    }
+    
+    throw new Error('IP定位返回数据格式错误');
+    
   } catch (error) {
-    console.error('IP定位失败:', error);
-    throw error;
+    console.error('❌ 高德IP定位失败:', error);
+    
+    // 使用备用IP定位服务
+    try {
+      console.log('🔄 尝试备用IP定位服务...');
+      return await fallbackIPLocation();
+    } catch (fallbackError) {
+      console.error('❌ 备用IP定位也失败:', fallbackError);
+      throw new Error('所有IP定位服务均失败');
+    }
+  }
+};
+
+
+/**
+ * 备用IP定位服务
+ */
+const fallbackIPLocation = async () => {
+  try {
+    // 使用免费的IP定位服务
+    const response = await fetch('https://ipapi.co/json/');
+    
+    if (!response.ok) {
+      throw new Error(`请求失败: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      accuracy: 5000,
+      city: data.city || '未知城市',
+      province: data.region || '未知省份',
+      country: data.country_name || '未知国家',
+      source: 'ip_fallback'
+    };
+    
+  } catch (error) {
+    console.error('备用IP定位失败:', error);
+    
+    // 最后的备用方案 - 使用另一个免费服务
+    try {
+      const response = await fetch('https://api.bigdatacloud.net/data/ip-geolocation?localityLanguage=zh');
+      const data = await response.json();
+      
+      return {
+        latitude: data.location.latitude,
+        longitude: data.location.longitude,
+        accuracy: 8000,
+        city: data.location.city || '未知城市',
+        province: data.location.principalSubdivision || '未知省份',
+        country: data.location.countryName || '未知国家',
+        source: 'ip_bigdata'
+      };
+    } catch (finalError) {
+      console.error('最终备用IP定位失败:', finalError);
+      throw new Error('所有IP定位服务均不可用');
+    }
   }
 };
 
@@ -74,7 +284,7 @@ export const getLocationByIP = async () => {
  */
 export const generateStaticMapUrl = (options = {}) => {
   const {
-    location = '116.397428,39.90923',
+    location = '121.484968 31.2351',
     zoom = 13,
     size = '400*400',
     scale = 1,
@@ -87,8 +297,9 @@ export const generateStaticMapUrl = (options = {}) => {
   let url = `${AMAP_CONFIG.baseUrl}/staticmap?`;
   const params = [];
 
-  // 基础参数
-  params.push(`key=${AMAP_CONFIG.key}`);
+  
+  // 使用静态地图密钥
+  params.push(`key=${AMAP_CONFIG.staticKey}`);
   params.push(`location=${location}`);
   params.push(`zoom=${zoom}`);
   params.push(`size=${size}`);
@@ -141,7 +352,7 @@ export const generateStaticMapUrl = (options = {}) => {
 };
 
 /**
- * 搜索附近宠物相关场所
+ * 获取附近的宠物活动场所
  */
 export const fetchNearbyActivities = async (latitude, longitude, radius = 5000) => {
   try {
@@ -163,7 +374,7 @@ export const fetchNearbyActivities = async (latitude, longitude, radius = 5000) 
     
     // 为每个关键词搜索
     for (const keyword of petKeywords) {
-      const url = `${AMAP_CONFIG.webServiceUrl}/place/around?key=${AMAP_CONFIG.key}&location=${longitude},${latitude}&keywords=${encodeURIComponent(keyword)}&radius=${radius}&offset=20&page=1&extensions=all`;
+      const url = `${AMAP_CONFIG.webServiceUrl}/place/around?key=${AMAP_CONFIG.staticKey}&location=${longitude},${latitude}&keywords=${encodeURIComponent(keyword)}&radius=${radius}&offset=20&page=1&extensions=all`;
       
       try {
         const response = await fetch(url);
@@ -172,6 +383,34 @@ export const fetchNearbyActivities = async (latitude, longitude, radius = 5000) 
         if (data.status === '1' && data.pois && data.pois.length > 0) {
           const formattedPois = data.pois.map(poi => {
             const [lng, lat] = poi.location.split(',').map(Number);
+            
+            // 安全处理 poi.tag
+            let tags = [];
+            if (poi.tag) {
+              if (typeof poi.tag === 'string') {
+                tags = poi.tag.split(';').filter(tag => tag.trim()).slice(0, 3);
+              } else if (Array.isArray(poi.tag)) {
+                tags = poi.tag.filter(tag => tag && typeof tag === 'string').slice(0, 3);
+              }
+            }
+            
+            // 安全处理 poi.photos
+            let photos = [];
+            if (poi.photos) {
+              if (Array.isArray(poi.photos)) {
+                photos = poi.photos.map(photo => {
+                  if (typeof photo === 'string') {
+                    return photo;
+                  } else if (photo && photo.url) {
+                    return photo.url;
+                  }
+                  return null;
+                }).filter(Boolean);
+              } else if (typeof poi.photos === 'string') {
+                photos = poi.photos.split(';').filter(photo => photo.trim());
+              }
+            }
+            
             return {
               id: poi.id,
               name: poi.name,
@@ -183,10 +422,10 @@ export const fetchNearbyActivities = async (latitude, longitude, radius = 5000) 
               rating: generateRating(),
               reviewCount: Math.floor(Math.random() * 200) + 5,
               address: poi.address || `${poi.pname}${poi.cityname}${poi.adname}`,
-              operatingHours: poi.business?.opentime || '营业时间详询',
+              operatingHours: (poi.business && poi.business.opentime) || '营业时间详询',
               phone: poi.tel || '',
-              photos: generatePhotos(poi.photos),
-              tags: poi.tag && typeof poi.tag === 'string' ? poi.tag.split(';').slice(0, 3) : [],
+              photos: photos.length > 0 ? photos : generatePhotos(poi.photos),
+              tags: tags,
               typeCode: poi.type,
               pname: poi.pname,
               cityname: poi.cityname,
@@ -223,26 +462,65 @@ export const fetchNearbyActivities = async (latitude, longitude, radius = 5000) 
  */
 export const fetchPlaceDetails = async (placeId) => {
   try {
-    const url = `${AMAP_CONFIG.webServiceUrl}/place/detail?key=${AMAP_CONFIG.key}&id=${placeId}&extensions=all`;
+    // 使用静态地图密钥
+    const url = `${AMAP_CONFIG.webServiceUrl}/place/detail?key=${AMAP_CONFIG.staticKey}&id=${placeId}&extensions=all`;
     const response = await fetch(url);
     const data = await response.json();
     
+    console.log('🔍 POI详情响应:', data);
+    
     if (data.status === '1' && data.pois && data.pois.length > 0) {
       const poi = data.pois[0];
+      
+      // 安全处理 poi.tag
+      let features = [];
+      if (poi.tag) {
+        if (typeof poi.tag === 'string') {
+          features = poi.tag.split(';').filter(tag => tag.trim());
+        } else if (Array.isArray(poi.tag)) {
+          features = poi.tag.filter(tag => tag && typeof tag === 'string');
+        }
+      }
+      
+      // 安全处理 poi.photos
+      let photos = [];
+      if (poi.photos) {
+        if (Array.isArray(poi.photos)) {
+          photos = poi.photos.map(photo => {
+            if (typeof photo === 'string') {
+              return photo;
+            } else if (photo && photo.url) {
+              return photo.url;
+            }
+            return null;
+          }).filter(Boolean);
+        } else if (typeof poi.photos === 'string') {
+          photos = poi.photos.split(';').filter(photo => photo.trim());
+        }
+      }
+      
+      // 安全处理营业时间
+      let operatingHours = '营业时间详询';
+      if (poi.business && poi.business.opentime) {
+        operatingHours = poi.business.opentime;
+      } else if (poi.business && poi.business.open_time) {
+        operatingHours = poi.business.open_time;
+      }
+      
       return {
         id: poi.id,
         name: poi.name,
         address: poi.address,
-        phone: poi.tel,
-        website: poi.website,
-        photos: poi.photos || [],
+        phone: poi.tel || '',
+        website: poi.website || '',
+        photos: photos,
         rating: generateRating(),
         reviews: generateReviews(),
-        operatingHours: poi.business?.opentime || '营业时间详询',
-        features: poi.tag ? poi.tag.split(';') : [],
+        operatingHours: operatingHours,
+        features: features,
         description: poi.introduction || `${poi.name}是一家专业的宠物服务机构。`,
-        price: poi.business?.cost || '',
-        parkingType: poi.business?.parking_type || '',
+        price: (poi.business && poi.business.cost) || '',
+        parkingType: (poi.business && poi.business.parking_type) || '',
         indoor: poi.indoor_map === '1'
       };
     }
@@ -260,7 +538,8 @@ export const fetchPlaceDetails = async (placeId) => {
  */
 export const geocode = async (address) => {
   try {
-    const url = `${AMAP_CONFIG.webServiceUrl}/geocode/geo?key=${AMAP_CONFIG.key}&address=${encodeURIComponent(address)}`;
+    // 使用静态地图密钥
+    const url = `${AMAP_CONFIG.webServiceUrl}/geocode/geo?key=${AMAP_CONFIG.staticKey}&address=${encodeURIComponent(address)}`;
     const response = await fetch(url);
     const data = await response.json();
     
@@ -295,13 +574,13 @@ export const geocode = async (address) => {
  */
 export const reverseGeocode = async (latitude, longitude) => {
   try {
-    // 检查API密钥
-    if (!AMAP_CONFIG.key || AMAP_CONFIG.key === 'YOUR_AMAP_KEY') {
-      console.warn('高德地图API密钥未配置，使用备用方案');
+    // 检查静态地图API密钥
+    if (!AMAP_CONFIG.staticKey || AMAP_CONFIG.staticKey === 'YOUR_AMAP_KEY') {
+      console.warn('高德地图静态API密钥未配置，使用备用方案');
       return await fallbackReverseGeocode(latitude, longitude);
     }
 
-    const url = `${AMAP_CONFIG.webServiceUrl}/geocode/regeo?key=${AMAP_CONFIG.key}&location=${longitude},${latitude}&extensions=all&output=json`;
+    const url = `${AMAP_CONFIG.webServiceUrl}/geocode/regeo?key=${AMAP_CONFIG.staticKey}&location=${longitude},${latitude}&extensions=all&output=json`;
     
     console.log('逆地理编码请求URL:', url);
     
@@ -331,7 +610,16 @@ export const reverseGeocode = async (latitude, longitude) => {
       };
     } else {
       // 如果高德API返回错误，使用备用方案
-      console.warn('高德地图API返回错误:', data.info || '未知错误');
+      
+      if (data.infocode === '10009') {
+        console.error('高德地图API密钥平台不匹配 - 请检查控制台配置');
+      } else if (data.infocode === '10001') {
+        console.error('高德地图API密钥无效');
+      } else if (data.infocode === '10004') {
+        console.error('高德地图API访问过于频繁');
+      }
+      
+      console.warn('高德地图API返回错误:', data.info || '未知错误', '错误码:', data.infocode);
       return await fallbackReverseGeocode(latitude, longitude);
     }
     
@@ -341,6 +629,8 @@ export const reverseGeocode = async (latitude, longitude) => {
     return await fallbackReverseGeocode(latitude, longitude);
   }
 };
+
+
 
 /**
  * 备用逆地理编码方案
@@ -394,7 +684,7 @@ const fallbackReverseGeocode = async (latitude, longitude) => {
  */
 export const searchPlaces = async (query, city = '') => {
   try {
-    const url = `${AMAP_CONFIG.webServiceUrl}/place/text?key=${AMAP_CONFIG.key}&keywords=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&offset=20&page=1&extensions=all`;
+    const url = `${AMAP_CONFIG.webServiceUrl}/place/text?key=${AMAP_CONFIG.staticKey}&keywords=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&offset=20&page=1&extensions=all`;
     
     const response = await fetch(url);
     const data = await response.json();
@@ -430,7 +720,7 @@ export const searchPlaces = async (query, city = '') => {
  */
 export const inputTips = async (keywords, city = '') => {
   try {
-    const url = `${AMAP_CONFIG.webServiceUrl}/assistant/inputtips?key=${AMAP_CONFIG.key}&keywords=${encodeURIComponent(keywords)}&city=${encodeURIComponent(city)}`;
+    const url = `${AMAP_CONFIG.webServiceUrl}/assistant/inputtips?key=${AMAP_CONFIG.staticKey}&keywords=${encodeURIComponent(keywords)}&city=${encodeURIComponent(city)}`;
     
     const response = await fetch(url);
     const data = await response.json();
@@ -573,6 +863,82 @@ const generateFallbackData = (latitude, longitude, radius) => {
   ];
 };
 
+/**
+ * 动态地图辅助函数
+ */
+
+/**
+ * 创建路径规划
+ */
+export const createRoute = async (start, end) => {
+  try {
+    const url = `${AMAP_CONFIG.webServiceUrl}/direction/driving?key=${AMAP_CONFIG.staticKey}&origin=${start.longitude},${start.latitude}&destination=${end.longitude},${end.latitude}&extensions=all`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status === '1' && data.route && data.route.paths.length > 0) {
+      const path = data.route.paths[0];
+      const steps = path.steps;
+      
+      // 提取路径坐标
+      const coordinates = [];
+      steps.forEach(step => {
+        const stepCoords = step.polyline.split(';').map(coord => {
+          const [lng, lat] = coord.split(',');
+          return [parseFloat(lng), parseFloat(lat)];
+        });
+        coordinates.push(...stepCoords);
+      });
+      
+      return {
+        coordinates,
+        distance: path.distance,
+        duration: path.duration,
+        steps: steps.map(step => ({
+          instruction: step.instruction,
+          distance: step.distance,
+          duration: step.duration
+        }))
+      };
+    }
+    
+    throw new Error('路径规划失败');
+  } catch (error) {
+    console.error('路径规划失败:', error);
+    throw error;
+  }
+};
+
+/**
+ * 批量地理编码
+ */
+export const batchGeocode = async (addresses) => {
+  try {
+    const results = [];
+    
+    for (const address of addresses) {
+      const result = await geocode(address);
+      results.push(result);
+      // 避免请求过快
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('批量地理编码失败:', error);
+    throw error;
+  }
+};
+
+
+// 导出配置供其他模块使用
+export const getMapConfig = () => ({
+  staticKey: AMAP_CONFIG.staticKey,
+  dynamicKey: AMAP_CONFIG.dynamicKey,
+  securityJsCode: AMAP_CONFIG.securityJsCode
+});
+
 export default {
   getCurrentLocation,
   getLocationByIP,
@@ -582,5 +948,9 @@ export default {
   geocode,
   reverseGeocode,
   searchPlaces,
-  inputTips
+  inputTips,
+  createRoute,        // 新增
+  batchGeocode,        // 新增
+  checkLocationPermission,
+  getBestLocation
 };

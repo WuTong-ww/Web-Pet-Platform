@@ -184,13 +184,7 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
               </div>
             )}
             
-            {regionPets.length > 9 && (
-              <div className="text-center mt-6">
-                <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                  查看更多 {selectedRegion.name} 地区宠物
-                </button>
-              </div>
-            )}
+            
           </div>
         </>
       )}

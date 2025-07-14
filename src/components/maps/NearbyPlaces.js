@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { fetchNearbyActivities, fetchPlaceDetails } from '../../services/mapService';
+import { fetchNearbyActivities, fetchPlaceDetails, getLocationByIP } from '../../services/mapService';
 import LocationPicker from './LocationPicker';
-import StaticMap from './StaticMap';
+import DynamicMap from './DynamicMap';
 import './NearbyPlaces.css';
 
 const NearbyPlaces = () => {
@@ -14,6 +14,47 @@ const NearbyPlaces = () => {
   const [radius, setRadius] = useState(5000);
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('distance');
+  const [isInitializing, setIsInitializing] = useState(true);
+
+   // 组件初始化时自动获取位置
+   useEffect(() => {
+    const initializeLocation = async () => {
+      setIsInitializing(true);
+      try {
+        console.log('🗺️ 地图页面初始化，自动获取位置...');
+        
+        // 优先使用IP定位作为默认位置
+        const ipLocation = await getLocationByIP();
+        console.log('✅ 自动获取位置成功:', ipLocation);
+        
+        setLocation(ipLocation);
+        
+        // 自动搜索附近的宠物场所
+        await fetchPlaces(ipLocation);
+        
+      } catch (err) {
+        console.error('自动获取位置失败:', err);
+        
+        // 如果IP定位也失败，设置一个默认位置（比如北京）
+        const defaultLocation = {
+          latitude: 31.22786,
+          longitude: 121.40652,
+          accuracy: 10000,
+          city: '上海市',
+          province: '上海市',
+          address: '华东师范大学',
+          source: 'default'
+        };
+        
+        setLocation(defaultLocation);
+        setError('无法获取您的位置，已设为默认位置。您可以手动搜索或重新定位。');
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeLocation();
+  }, []);
 
   // 获取附近场所
   const fetchPlaces = async (userLocation, searchRadius = radius) => {
@@ -37,8 +78,17 @@ const NearbyPlaces = () => {
     }
   };
 
-  // 位置选择回调
+  // 位置选择回调 - 优化版本
   const handleLocationSelect = (newLocation) => {
+    console.log('新选择的位置:', newLocation);
+    
+    // 如果位置精度太低，提示用户
+    if (newLocation.accuracy && newLocation.accuracy > 1000) {
+      setError(`位置精度较低(${newLocation.accuracy}米)，搜索结果可能不够准确`);
+    } else {
+      setError(''); // 清除之前的错误
+    }
+    
     setLocation(newLocation);
     fetchPlaces(newLocation);
   };
@@ -47,12 +97,25 @@ const NearbyPlaces = () => {
   const handleViewDetails = async (place) => {
     setLoading(true);
     try {
+      console.log('🔍 获取场所详情:', place);
       const details = await fetchPlaceDetails(place.id);
+      console.log('✅ 场所详情获取成功:', details);
       setSelectedPlace({ ...place, ...details });
       setShowDetails(true);
     } catch (err) {
       console.error('获取详情失败:', err);
-      setSelectedPlace(place);
+      console.log('🔄 使用基础信息显示详情');
+      // 使用基础信息作为备用
+      setSelectedPlace({
+        ...place,
+        features: place.tags || [],
+        reviews: [],
+        photos: place.photos || [],
+        description: `${place.name}是一家位于${place.address}的宠物服务场所。`,
+        price: '价格面议',
+        parkingType: '停车信息待更新',
+        indoor: false
+      });
       setShowDetails(true);
     } finally {
       setLoading(false);
@@ -105,6 +168,27 @@ const NearbyPlaces = () => {
 
   const filteredPlaces = getFilteredAndSortedPlaces();
 
+  // 如果正在初始化，显示初始化状态
+  if (isInitializing) {
+    return (
+      <div className="nearby-places">
+        <div className="header">
+          <h2>🐾 附近宠物友好场所</h2>
+          <p>正在为您初始化地图服务...</p>
+        </div>
+        
+        <div className="initializing">
+          <div className="spinner"></div>
+          <p>🌐 正在获取您的位置信息...</p>
+          <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+            这可能需要几秒钟时间
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="nearby-places">
       <div className="header">
@@ -117,14 +201,36 @@ const NearbyPlaces = () => {
         initialLocation={location}
       />
 
-      {location && (
-        <div className="map-container">
-          <StaticMap 
+      {/* 位置精度提示 */}
+      {location && location.accuracy && (
+        <div className={`accuracy-info ${location.accuracy > 1000 ? 'low-accuracy' : 'good-accuracy'}`}>
+          <span className="accuracy-icon">
+            {location.accuracy > 1000 ? '⚠️' : '✅'}
+          </span>
+          <span>
+            定位精度: {location.accuracy}米 
+            {location.source === 'gps' && ' (GPS定位)'}
+            {location.source === 'ip_amap' && ' (高德IP定位)'}
+            {location.source === 'ip_fallback' && ' (备用IP定位)'}
+          </span>
+        </div>
+      )}
+
+{/* 地图组件 - 现在总是显示 */}
+{location && (
+        <div className="map-section">
+          <DynamicMap
             location={location}
-            places={filteredPlaces.slice(0, 10)}
+            places={filteredPlaces}
             zoom={13}
-            size="800*400"
             showMarkers={true}
+            onMapClick={(newLocation) => {
+              setLocation(newLocation);
+              fetchPlaces(newLocation);
+            }}
+            onMarkerClick={handleViewDetails}
+            showInfoWindow={true}
+            showPolyline={false}
           />
         </div>
       )}
