@@ -17,8 +17,8 @@ import { cleanText, formatDescription } from './utils/textUtils';
 import NearbyPlaces from './components/maps/NearbyPlaces';
 import { PetProfileProvider } from './contexts/PetProfileContext';
 import PetProfileManager from './components/profiles/PetProfileManager';
-
-
+import FavoriteManager from './components/favorites/FavoriteManager';
+import { FavoriteProvider, useFavorite } from './contexts/FavoriteContext';
 
 // 实时统计组件
 const RealTimeStats = () => {
@@ -240,7 +240,16 @@ const PetList = ({ pets, onPetClick, pagination, onLoadMore, onRefresh, isLoadin
 
 // 宠物详情模态框 - 简化描述显示，保持原始内容
 const PetDetailModal = ({ pet, onClose }) => {
+  const { addToFavorites, removeFromFavorites, isFavorited } = useFavorite();
   if (!pet) return null;
+
+  const handleToggleFavorite = () => {
+    if (isFavorited(pet.id)) {
+      removeFromFavorites(pet.id);
+    } else {
+      addToFavorites(pet);
+    }
+  };
 
   // 格式化地址信息
   const formatAddress = (address) => {
@@ -511,11 +520,16 @@ const PetDetailModal = ({ pet, onClose }) => {
                   📞 联系收容所
                 </button>
                 <button 
-                  className="w-full bg-orange-100 text-orange-700 py-3 rounded-lg font-medium hover:bg-orange-200 transition-colors"
-                  onClick={() => alert(`已将 ${pet.name} 添加到收藏夹！`)}
-                >
-                  ❤️ 收藏
-                </button>
+              className={clsx(
+                "w-full py-3 rounded-lg font-medium transition-colors",
+                isFavorited(pet.id)
+                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                  : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+              )}
+              onClick={handleToggleFavorite}
+            >
+              {isFavorited(pet.id) ? '💔 取消收藏' : '❤️ 收藏'}
+            </button>
               </div>
               
               <div className="mt-4 text-xs text-gray-500">
@@ -671,6 +685,9 @@ const AppContent = () => {
     triggerCrawl,
     resetCrawlStatus
   } = useRealTimeData();
+
+  const { getFavoriteStats } = useFavorite();
+  const favoriteStats = getFavoriteStats();
 
   // 处理爬取完成
   const handleCrawlComplete = async (result) => {
@@ -1027,7 +1044,10 @@ const AppContent = () => {
                       </div>
                     </div>
                     
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105">
+                    <div 
+                      className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105"
+                      onClick={() => setProfileView('favorites')}
+                    >
                       <div className="flex items-center mb-4">
                         <div className="text-4xl mr-4">❤️</div>
                         <div>
@@ -1036,7 +1056,9 @@ const AppContent = () => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-purple-600">查看收藏的宠物和领养信息</span>
+                        <span className="text-sm text-purple-600">
+                          已收藏 {favoriteStats.total} 只宠物
+                        </span>
                         <span className="text-purple-600">→</span>
                       </div>
                     </div>
@@ -1079,7 +1101,27 @@ const AppContent = () => {
                 </PetProfileProvider>
               </div>
             )}
+
+             {/* 收藏管理视图 */}
+      {profileView === 'favorites' && (
+        <div className="space-y-6">
+          {/* 返回按钮 */}
+          <div className="flex items-center">
+            <button
+              onClick={() => setProfileView('main')}
+              className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <span className="mr-2">←</span>
+              返回档案中心
+            </button>
           </div>
+
+          {/* 收藏管理组件 */}
+          <FavoriteManager onPetClick={handlePetClick} />
+        </div>
+      )}
+          </div>
+
         );
 
       case 'ai':
@@ -1195,7 +1237,9 @@ const AppContent = () => {
 function App() {
   return (
     <RealTimeDataProvider>
-      <AppContent />
+      <FavoriteProvider>
+        <AppContent />
+      </FavoriteProvider>
     </RealTimeDataProvider>
   );
 }

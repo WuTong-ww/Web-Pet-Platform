@@ -1,7 +1,19 @@
 import React from "react";
 import { safeTextTruncate } from "../../utils/textUtils";
+import { useFavorite } from '../../contexts/FavoriteContext';
 
-export default function PetCard({ pet }) {
+export default function PetCard({ pet, onClick }) {
+  const { addToFavorites, removeFromFavorites, isFavorited } = useFavorite();
+
+  const handleToggleFavorite = (e) => {
+    e.stopPropagation(); // 防止触发卡片点击事件
+    
+    if (isFavorited(pet.id)) {
+      removeFromFavorites(pet.id);
+    } else {
+      addToFavorites(pet);
+    }
+  };
   const {
     name,
     image,
@@ -43,9 +55,37 @@ export default function PetCard({ pet }) {
         borderRadius: "8px",
         padding: "10px",
         backgroundColor: "#fff",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+        cursor: "pointer",
+        transition: "transform 0.2s, box-shadow 0.2s",
+        position: "relative"
       }}
+      onClick={() => onClick && onClick(pet)}
     >
+      {/* 收藏按钮 */}
+      <button
+        onClick={handleToggleFavorite}
+        style={{
+          position: "absolute",
+          top: "8px",
+          right: "8px",
+          background: "rgba(255, 255, 255, 0.9)",
+          border: "none",
+          borderRadius: "50%",
+          width: "32px",
+          height: "32px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "14px",
+          zIndex: 1
+        }}
+        title={isFavorited(pet.id) ? "取消收藏" : "收藏"}
+      >
+        {isFavorited(pet.id) ? "💔" : "❤️"}
+      </button>
+      
       <img
         src={image}
         alt={name}
