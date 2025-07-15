@@ -253,73 +253,59 @@ export const RealTimeDataProvider = ({ children }) => {
   };
 
   // 手动触发爬取
-  const triggerCrawl = async () => {
+  const triggerCrawl = async (onComplete) => {
+    if (crawlStatus.isActive) return;
+    
+    // 设置爬取状态
+    setCrawlStatus(prev => ({
+      ...prev,
+      isActive: true,
+      progress: 0,
+      message: '正在连接爬虫服务...'
+    }));
+    
     try {
-      setCrawlStatus(prev => ({
-        ...prev,
-        isActive: true,
-        progress: 0,
-        message: '正在连接香港SPCA网站...'
-      }));
-
-      console.log('🕷️ 开始手动爬取香港SPCA数据...');
+      // 启动爬虫
+      const response = await fetch('http://localhost:3001/api/crawl/start', {
+        method: 'POST'
+      });
       
-      // 模拟进度更新
-      const progressInterval = setInterval(() => {
+      // 处理响应
+      if (response.ok) {
+        // 爬虫启动成功，等待完成
+        const result = await response.json();
         setCrawlStatus(prev => ({
           ...prev,
-          progress: Math.min(prev.progress + Math.random() * 15, 90),
-          message: prev.progress < 30 ? '正在获取宠物列表...' :
-                   prev.progress < 60 ? '正在抓取宠物详情...' :
-                   '正在处理数据...'
+          message: '爬取已开始，正在处理数据...'
         }));
-      }, 500);
-      
-      // 调用后端爬取API
-      const response = await fetch('http://localhost:8080/crawl/china', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      clearInterval(progressInterval);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.status === 'success') {
+        
+        // 刷新数据
+        await refreshData();
+        
+        // 更新爬取状态
         setCrawlStatus(prev => ({
           ...prev,
           isActive: false,
-          progress: 100,
-          message: `成功爬取 ${result.count} 条宠物数据`,
           lastCrawlTime: new Date(),
-          lastCrawlCount: result.count
+          lastCrawlCount: result.count || 0,
+          progress: 100,
+          message: '爬取完成！'
         }));
-
-        console.log('✅ 手动爬取完成:', result.count, '条数据');
-        
-        // 爬取成功后，自动刷新数据
-        await refreshData();
-        
-        return result;
       } else {
-        throw new Error(result.message || '爬取失败');
+        throw new Error('启动爬虫失败');
       }
-
     } catch (error) {
-      console.error('❌ 手动爬取失败:', error);
+      console.error('爬虫错误:', error);
       setCrawlStatus(prev => ({
         ...prev,
         isActive: false,
-        progress: 0,
         message: `爬取失败: ${error.message}`
       }));
-      throw error;
+    } finally {
+      // 调用完成回调，通知组件爬取过程已完成
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
     }
   };
 

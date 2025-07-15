@@ -2,7 +2,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
-
+const db = require('../db');
 // SPCA宠物领养专用配置
 const SPCA_CONFIG = {
     baseURL: 'https://www.spca.org.hk',
@@ -442,75 +442,119 @@ const crawlSpcaPets = async (batchMode = true) => {
   }
 };
 
-// 保存到文件
+// 修改保存到文件的函数为保存到SQLite
 const saveToFile = async (newPets) => {
   try {
-    const dataFile = path.join(__dirname, '../data/chinaPets.json');
-    let existingPets = [];
+    console.log(`💾 准备保存 ${newPets.length} 只宠物数据到SQLite数据库`);
     
-    const dataDir = path.dirname(dataFile);
-    if (!fs.existsSync(dataDir)) {
-      console.log(`📁 创建数据目录: ${dataDir}`);
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
+    // 开始事务
+    await new Promise((resolve, reject) => {
+      db.run('BEGIN TRANSACTION', (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
     
-    if (fs.existsSync(dataFile)) {
+    // 准备插入或更新语句
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO pets 
+      (id, code, name, type, breed, age, gender, description, image, 
+      location, center, source, detailUrl, tags, personalityTags, 
+      popularity, viewCount, favoriteCount, publishedAt, postedDate, images, data) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    // 遍历插入数据
+    let successCount = 0;
+    for (const pet of newPets) {
       try {
-        const content = fs.readFileSync(dataFile, 'utf-8');
-        existingPets = JSON.parse(content);
-        console.log(`📖 读取现有数据: ${existingPets.length} 条记录`);
-      } catch (err) {
-        console.warn('⚠️ 读取现有数据失败，将创建新文件');
-        existingPets = [];
+        // 将数组转换为JSON字符串
+        const tagsJson = JSON.stringify(pet.tags || []);
+        const personalityTagsJson = JSON.stringify(pet.personalityTags || []);
+        const imagesJson = JSON.stringify(pet.images || []);
+        
+        // 将整个宠物对象保存为JSON以保留所有字段
+        const petDataJson = JSON.stringify(pet);
+        
+        // 插入数据
+        await new Promise((resolve, reject) => {
+          stmt.run(
+            pet.id,
+            pet.code,
+            pet.name,
+            pet.type,
+            pet.breed,
+            pet.age,
+            pet.gender,
+            pet.description,
+            pet.image,
+            pet.location,
+            pet.center,
+            pet.source,
+            pet.detailUrl,
+            tagsJson,
+            personalityTagsJson,
+            pet.popularity || 0,
+            pet.viewCount || 0,
+            pet.favoriteCount || 0,
+            pet.publishedAt,
+            pet.postedDate ? pet.postedDate.toISOString() : new Date().toISOString(),
+            imagesJson,
+            petDataJson,
+            (err) => {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+        
+        successCount++;
+      } catch (petError) {
+        console.error(`❌ 保存宠物数据失败: ${pet.id}`, petError);
       }
-    } else {
-      console.log('📄 数据文件不存在，将创建新文件');
     }
     
-    const existingIds = new Set(existingPets.map(pet => pet.id));
-    const uniqueNewPets = newPets.filter(pet => !existingIds.has(pet.id));
-    const allPets = [...existingPets, ...uniqueNewPets];
+    // 结束事务
+    await new Promise((resolve, reject) => {
+      db.run('COMMIT', (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
     
-    try {
-      fs.writeFileSync(dataFile, JSON.stringify(allPets, null, 2), 'utf-8');
-      console.log(`💾 保存成功: 新增 ${uniqueNewPets.length}，总计 ${allPets.length}`);
-      console.log(`📁 文件路径: ${dataFile}`);
-    } catch (writeError) {
-      console.error('❌ 写入文件失败:', writeError.message);
-      
-      const backupFile = path.join(__dirname, `../chinaPets_backup_${Date.now()}.json`);
-      console.log(`🔄 尝试备用路径: ${backupFile}`);
-      
-      fs.writeFileSync(backupFile, JSON.stringify(allPets, null, 2), 'utf-8');
-      console.log(`💾 备用保存成功: ${backupFile}`);
-    }
-    
+    stmt.finalize();
+    console.log(`💾 成功保存 ${successCount}/${newPets.length} 只宠物数据到SQLite数据库`);
   } catch (error) {
-    console.error('❌ 保存文件失败:', error.message);
+    console.error('❌ 保存到SQLite数据库失败:', error);
     
+    // 回滚事务
+    db.run('ROLLBACK', (rollbackErr) => {
+      if (rollbackErr) console.error('❌ 回滚事务失败:', rollbackErr);
+    });
+    
+    // 尝试回退到文件保存方式作为备用
     try {
       const tempFile = path.join(__dirname, `../temp_pets_${Date.now()}.json`);
       fs.writeFileSync(tempFile, JSON.stringify(newPets, null, 2), 'utf-8');
-      console.log(`🆘 紧急保存到临时文件: ${tempFile}`);
-    } catch (tempError) {
-      console.error('❌ 连临时文件都无法保存:', tempError.message);
+      console.log(`🆘 SQLite失败，紧急保存到临时文件: ${tempFile}`);
+    } catch (fileError) {
+      console.error('❌ 备用保存也失败:', fileError);
     }
   }
 };
 
-// 获取总数
+// 修改获取总数的方法
 const getTotalCount = async () => {
-  try {
-    const dataFile = path.join(__dirname, '../data/chinaPets.json');
-    if (fs.existsSync(dataFile)) {
-      const content = fs.readFileSync(dataFile, 'utf-8');
-      const data = JSON.parse(content);
-      return data.length;
-    }
-    return 0;
-  } catch (error) {
-    return 0;
-  }
+  return new Promise((resolve, reject) => {
+    db.get('SELECT COUNT(*) as count FROM pets', (err, row) => {
+      if (err) {
+        console.error('❌ 获取宠物总数失败:', err);
+        resolve(0);
+      } else {
+        resolve(row.count);
+      }
+    });
+  });
 };
 
 // 重置爬取状态
@@ -1790,8 +1834,38 @@ const generateMockPetData = (code) => {
   };
 };
 
+// 在index.js中添加读取SQLite数据的方法
+const getChinaPets = () => {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM pets', (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        // 转换数据格式，将JSON字符串转回对象
+        const pets = rows.map(row => {
+          try {
+            // 尝试解析JSON字段
+            const pet = {
+              ...row,
+              tags: row.tags ? JSON.parse(row.tags) : [],
+              personalityTags: row.personalityTags ? JSON.parse(row.personalityTags) : [],
+              images: row.images ? JSON.parse(row.images) : []
+            };
+            return pet;
+          } catch (e) {
+            console.error('解析JSON字段失败:', e);
+            return row;
+          }
+        });
+        resolve(pets);
+      }
+    });
+  });
+};
+
 module.exports = {
   crawlSpcaPets,
   resetCrawlState,
-  getCrawlStatus
+  getCrawlStatus,
+  getChinaPets
 };

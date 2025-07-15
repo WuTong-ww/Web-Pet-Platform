@@ -581,6 +581,12 @@ const AppContent = () => {
   const [profileView, setProfileView] = useState('main'); // 新增：管理档案视图状态
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
 
+  const handleTriggerCrawl = () => {
+    setIsLoading(true); // 设置全局加载状态
+    triggerCrawl(() => {
+      setIsLoading(false); // 在爬取完成后重置加载状态
+    });
+  };
   const handleNavigation = (newView, skipTransition = false) => {
     if (newView === currentView || isPageTransitioning) return;
 
@@ -607,7 +613,7 @@ const AppContent = () => {
         setIsPageTransitioning(false);
       }
       
-      setIsPageTransitioning(false);
+      
     }, skipTransition ? 0 :200);
   };
 
@@ -743,21 +749,18 @@ const AppContent = () => {
                   </p>
                 </div>
                 <button
-                  onClick={triggerCrawl}
+                  onClick={handleTriggerCrawl}
                   disabled={crawlStatus.isActive || isLoading}
                   className={clsx(
-                    "px-4 py-2 rounded-lg font-medium transition-all",
+                    "px-4 py-2 rounded-lg font-medium transition-colors",
                     crawlStatus.isActive || isLoading
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-lg transform hover:scale-105"
+                      : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:bg-purple-700"
                   )}
                 >
                   {crawlStatus.isActive ? (
                     <span className="flex items-center">
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       爬取中...
                     </span>
                   ) : '🚀 快速更新数据'}
@@ -1109,7 +1112,8 @@ const AppContent = () => {
     return (
       <PageTransition 
         currentView={currentView} 
-        isLoading={isPageTransitioning}
+        isLoading={isLoading}
+        isPageTransitioning={isPageTransitioning}
       >
         {content}
       </PageTransition>
@@ -1203,7 +1207,7 @@ const AppContent = () => {
       </nav>
       
 {/* 优化的加载指示器 - 只在数据加载时显示 */}
-{isLoading && (
+{isLoading && !isPageTransitioning && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
           <div className="fluffy-card bg-white rounded-lg shadow-lg p-4 flex items-center space-x-3">
             <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>

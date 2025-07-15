@@ -16,7 +16,8 @@ const ECNU_API_CONFIG = {
 
 // 导入爬虫模块
 //const { crawlSzadoptPet } = require("./crawler/szadopt");
-const { crawlSpcaPets, resetCrawlState, getCrawlStatus } = require("./crawler/spca");
+const { crawlSpcaPets, resetCrawlState, getCrawlStatus, getChinaPets } = require('./crawler/spca');
+
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -237,21 +238,13 @@ app.post("/crawl/reset", (req, res) => {
 });
 
 // 获取香港SPCA数据的API
-app.get("/data/china", (req, res) => {
+app.get("/data/china", async (req, res) => {
   try {
-    const file = path.join(__dirname, "data/chinaPets.json");
+    console.log("📊 从SQLite数据库获取宠物数据...");
     
-    console.log("📖 尝试读取文件:", file);
+    const data = await getChinaPets();
     
-    if (!fs.existsSync(file)) {
-      console.log("📄 文件不存在，返回空数组");
-      return res.json([]);
-    }
-    
-    const content = fs.readFileSync(file, "utf-8");
-    const data = JSON.parse(content);
-    
-    console.log(`✅ 成功读取 ${data.length} 条数据`);
+    console.log(`✅ 成功获取 ${data.length} 条宠物数据`);
     res.json(data);
   } catch (err) {
     console.error("❌ 读取数据失败:", err);

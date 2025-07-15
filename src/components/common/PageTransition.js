@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import './PageTransition.css';
 
-const PageTransition = ({ children, currentView, isLoading }) => {
+const PageTransition = ({ children, currentView, isLoading, isPageTransitioning }) => {
   const [displayContent, setDisplayContent] = useState(children);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -42,7 +42,7 @@ const PageTransition = ({ children, currentView, isLoading }) => {
   return (
     <div className="page-transition-container">
       {/* 过渡装饰层 */}
-      {isTransitioning && (
+      {isPageTransitioning && (
         <div className="transition-decoration">
           {createFluffBalls()}
           <div className="transition-hearts">
@@ -54,12 +54,12 @@ const PageTransition = ({ children, currentView, isLoading }) => {
       )}
       
       {/* 页面内容 */}
-      <div className={`page-content-wrapper ${isTransitioning ? 'transitioning' : 'active'} ${isLoading ? 'loading' : ''}`}>
+      <div className={`page-content-wrapper ${isPageTransitioning ? 'transitioning' : 'active'} `}>
         {displayContent}
       </div>
       
       {/* 加载时的毛茸茸效果 */}
-      {isLoading && (
+      {isPageTransitioning  && (
         <div className="loading-fluff">
           <div className="loading-paw">🐾</div>
           <div className="loading-text">加载中...</div>
