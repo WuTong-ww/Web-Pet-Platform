@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 // 后端API代理配置
 const AI_API_CONFIG = {
   baseURL: 'http://localhost:8080/api/ecnu', // 使用后端代理

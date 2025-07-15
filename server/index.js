@@ -3,6 +3,7 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
+const authRoutes = require('./auth');
 
 // 在文件顶部添加ECNU API配置
 const ECNU_API_CONFIG = {
@@ -32,6 +33,8 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
   next();
 });
+
+app.use('/api/auth', authRoutes);
 
 // 添加ECNU API代理 - 现在 app 已经初始化了
 app.post("/api/ecnu/chat/completions", async (req, res) => {

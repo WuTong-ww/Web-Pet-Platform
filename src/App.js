@@ -24,7 +24,10 @@ import AIAssistant from './components/ai/AIAssistant';
 import MouseClickEffect from './components/common/MouseClickEffect';
 import FluffyButton from './components/common/FluffyButton';
 import { playPetSound, playHeartSound,playClickSound, initializeSounds } from './utils/soundEffects';
-
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import PrivateRoute from './PrivateRoute';
+import RegisterPage from './pages/RegisterPage';
 // 实时统计组件
 const RealTimeStats = () => {
   const { globalStats, connectionStatus, refreshStats } = useRealTimeData();
@@ -1148,8 +1151,21 @@ function App() {
   return (
     <RealTimeDataProvider>
       <FavoriteProvider>
-      <AIProvider> 
-          <AppContent />
+        <AIProvider>
+          <Router>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <AppContent />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </Router>
         </AIProvider>
       </FavoriteProvider>
     </RealTimeDataProvider>

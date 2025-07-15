@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import clsx from 'clsx';
 import { useAI } from '../../contexts/AIContext';
-
+import { marked } from 'marked';
+import styles from './AIAssistant.css';
 // 消息组件
 const Message = ({ message, onRegenerate }) => {
   const { type, content, timestamp, isEmergency, model } = message;
@@ -27,9 +28,10 @@ const Message = ({ message, onRegenerate }) => {
         )}
 
         {/* 消息内容 */}
-        <div className="whitespace-pre-wrap">
-          {content}
-        </div>
+        <div
+          className="whitespace-pre-wrap"
+          dangerouslySetInnerHTML={{ __html: marked(content) }} // 使用 marked 解析 Markdown
+        ></div>
 
         {/* 时间戳和模型信息 */}
         <div className="flex items-center justify-between mt-2 text-xs opacity-70">
