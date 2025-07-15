@@ -138,7 +138,7 @@ const FavoriteManager = ({ onPetClick }) => {
           {sortedFavorites.map((pet) => (
             <div
               key={pet.id}
-              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
+              className="fluffy-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
             >
               {/* 宠物图片 */}
               <div className="aspect-square bg-gray-200 relative">

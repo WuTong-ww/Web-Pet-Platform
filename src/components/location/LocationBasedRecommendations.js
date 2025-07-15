@@ -151,7 +151,9 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
                   <div
                     key={pet.id}
                     className="bg-white rounded-lg shadow border p-4 cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => onPetClick && onPetClick(pet)}
+                    onClick={() => 
+                      
+                      onPetClick && onPetClick(pet)}
                   >
                     <div className="aspect-square mb-4 bg-gray-200 rounded-lg overflow-hidden">
                       <img 

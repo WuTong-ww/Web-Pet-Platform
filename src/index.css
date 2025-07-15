@@ -249,7 +249,7 @@
   background: linear-gradient(135deg, #dac9f73b 50%, #fef7ff 50%);
   border-radius: 20px;
   border: 2px solid rgba(255, 182, 193, 0.3);
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
 
@@ -265,9 +265,30 @@
 }
 
 .fluffy-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(247, 251, 186, 0.441);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow:  0 25px 50px rgba(139, 92, 246, 0.15),
+  0 15px 35px rgba(59, 130, 246, 0.1),
+  inset 0 1px 0 rgba(255, 255, 255, 0.9);
   border-color: rgba(246, 254, 157, 0.6);
+}
+
+.fluffy-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent);
+  transition: left 0.8s;
+  pointer-events: none;
+}
+
+.fluffy-card:hover::after {
+  left: 100%;
 }
 
 @keyframes floatingBubbles {
@@ -295,3 +316,264 @@
   );
 }
 
+/* 增强按钮效果 */
+.fluffy-button {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 1.5rem;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 
+    0 8px 20px rgba(139, 92, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.fluffy-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  transform: translateX(-100%) skewX(-15deg);
+  transition: transform 0.6s;
+}
+
+.fluffy-button:hover::before {
+  transform: translateX(100%) skewX(-15deg);
+}
+
+.fluffy-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 
+    0 15px 35px rgba(139, 92, 246, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.fluffy-button:active {
+  transform: translateY(-1px) scale(1.02);
+  transition: all 0.1s;
+}
+
+/* 导航按钮增强 */
+nav button {
+  position: relative;
+  overflow: hidden;
+}
+
+nav button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+  transition: all 0.4s ease;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+nav button:hover::before {
+  width: 100px;
+  height: 100px;
+}
+
+/* 页面切换时的毛茸茸边框动画 */
+@keyframes fluffyBorderFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.fluffy-border-animated {
+  position: relative;
+  border-radius: 2rem;
+}
+
+.fluffy-border-animated::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, 
+    #8b5cf6, #3b82f6, #ec4899, #f59e0b, 
+    #10b981, #8b5cf6);
+  background-size: 300% 300%;
+  border-radius: 2rem;
+  z-index: -1;
+  animation: fluffyBorderFlow 4s ease infinite;
+  opacity: 0.7;
+}
+
+/* 毛茸茸的文本效果 */
+.fluffy-text {
+  background: linear-gradient(45deg, 
+    #8b5cf6, #3b82f6, #ec4899);
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: fluffyTextShimmer 3s ease-in-out infinite;
+}
+
+@keyframes fluffyTextShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* 统计卡片的脉冲效果 */
+.stats-card {
+  animation: statsGlow 3s ease-in-out infinite;
+}
+
+@keyframes statsGlow {
+  0%, 100% { 
+    box-shadow: 
+      0 10px 30px rgba(139, 92, 246, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  50% { 
+    box-shadow: 
+      0 15px 40px rgba(139, 92, 246, 0.2),
+      0 0 20px rgba(139, 92, 246, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* 模态框增强效果 */
+.modal-backdrop {
+  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.modal-content {
+  animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 加载状态的毛茸茸效果 */
+.loading-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.4) 50%, 
+    rgba(255, 255, 255, 0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 响应式增强 */
+@media (max-width: 768px) {
+  .fluffy-card:hover {
+    transform: translateY(-2px) scale(1.01);
+  }
+  
+  .fluffy-button:hover {
+    transform: translateY(-2px) scale(1.03);
+  }
+  
+  .pet-card-breathing {
+    animation-duration: 6s;
+  }
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .fluffy-card {
+    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(75, 85, 99, 0.3);
+  }
+  
+  .fluffy-card:hover {
+    box-shadow: 
+      0 25px 50px rgba(139, 92, 246, 0.2),
+      0 15px 35px rgba(59, 130, 246, 0.15);
+  }
+}
+
+/* 可访问性增强 */
+@media (prefers-reduced-motion: reduce) {
+  .pet-card-breathing,
+  .fluffy-border-animated::before,
+  .fluffy-text,
+  .stats-card {
+    animation: none;
+  }
+  
+  .fluffy-card,
+  .fluffy-button {
+    transition: none;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .fluffy-card {
+    border: 2px solid #000;
+    box-shadow: none;
+  }
+  
+  .fluffy-button {
+    border: 2px solid #000;
+    box-shadow: none;
+  }
+}
+
+/* 焦点状态增强 */
+.fluffy-card:focus-within,
+.fluffy-button:focus {
+  outline: 3px solid rgba(139, 92, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .fluffy-card:hover {
+    transform: none;
+  }
+  
+  .fluffy-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s;
+  }
+  
+  .fluffy-button:hover {
+    transform: none;
+  }
+  
+  .fluffy-button:active {
+    transform: scale(0.95);
+  }
+}

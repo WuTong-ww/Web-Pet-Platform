@@ -28,6 +28,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import PrivateRoute from './PrivateRoute';
 import RegisterPage from './pages/RegisterPage';
+import PageTransition from './components/common/PageTransition';
+
 // 实时统计组件
 const RealTimeStats = () => {
   const { globalStats, connectionStatus, refreshStats } = useRealTimeData();
@@ -45,7 +47,7 @@ const RealTimeStats = () => {
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">📊 实时数据</h2>
+        <h2 className=" text-2xl font-bold text-gray-800">📊 实时数据</h2>
         <div className="flex items-center space-x-2">
           <div className={`w-3 h-3 rounded-full ${
             connectionStatus === 'connected' ? 'bg-green-400 animate-pulse' : 'bg-red-400'
@@ -402,7 +404,7 @@ const PetDetailModal = ({ pet, onClose }) => {
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">{pet.name}</h2>
+              <h2 className="fluffy-text text-3xl font-bold text-gray-900 mb-2">{pet.name}</h2>
               <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                   {pet.type}
@@ -577,6 +579,37 @@ const AppContent = () => {
   const [showFilter, setShowFilter] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [profileView, setProfileView] = useState('main'); // 新增：管理档案视图状态
+  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+
+  const handleNavigation = (newView, skipTransition = false) => {
+    if (newView === currentView || isPageTransitioning) return;
+
+    // 添加这个检查，防止快速连续点击
+  if (Date.now() - (window.lastNavigationTime || 0) < 500) return;
+  window.lastNavigationTime = Date.now();
+    // 播放点击音效
+    playClickSound();
+    
+    if (!skipTransition) {
+      setIsPageTransitioning(true);
+    }
+    
+    // 延迟设置新视图，让动画先开始
+    setTimeout(() => {
+      setCurrentView(newView);
+      
+      // 如果切换到档案页面，重置为主视图
+      if (newView === 'profile') {
+        setProfileView('main');
+      }
+
+      if (!skipTransition) {
+        setIsPageTransitioning(false);
+      }
+      
+      setIsPageTransitioning(false);
+    }, skipTransition ? 0 :200);
+  };
 
   const { 
     adoptablePets, 
@@ -632,6 +665,9 @@ const AppContent = () => {
   const handlePetClick = async (pet) => {
     // 先显示基本信息
     setSelectedPet(pet);
+
+    // 跳转到宠物详情视图，但跳过动画
+  handleNavigation('pet-detail', true);
     
     // // 对于 Petfinder 宠物，获取完整详细信息
     // if (pet.source === 'petfinder' && pet.id) {
@@ -687,14 +723,15 @@ const AppContent = () => {
   ];
 
   const renderContent = () => {
+    let content;
     switch (currentView) {
       case 'home':
-        return (
+        content =(
           <div className="space-y-8">
             <RealTimeStats />
             
             {/* 快速数据更新区域 */}
-            <div className="bg-gradient-to-br from-blue-100 to-purple-50 shadow-lg p-6">
+            <div className="fluffy-card bg-gradient-to-br from-blue-100 to-purple-50 shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">🔄 数据更新</h3>
@@ -740,7 +777,7 @@ const AppContent = () => {
               )}
             </div>
 {/* 搜索和筛选区域 */}
-<div className="bg-gradient-to-br from-blue-100 to-purple-50 rounded-xl shadow-lg p-6">
+<div className="fluffy-card bg-gradient-to-br from-blue-100 to-purple-50 rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">🔍 宠物搜索与浏览</h2>
                 <button 
@@ -787,7 +824,7 @@ const AppContent = () => {
             
             
             {/* 宠物列表 - 直接显示 */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="fluffy-card bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">
                   🐾 待领养宠物
@@ -822,9 +859,10 @@ const AppContent = () => {
             </div>
           </div>
         );
+        break;
 
       case 'search':
-        return (
+        content = (
           <div className="space-y-6">
             {/* 添加爬取按钮 */}
             <CrawlButton
@@ -834,12 +872,12 @@ const AppContent = () => {
               disabled={isLoading}
             />
             
-            <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="fluffy-card bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">🔍 宠物搜索</h2>
                 <button 
                   onClick={() => setShowFilter(true)}
-                  className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                  className="fluffy-button px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
                 >
                   🎛️ 高级筛选
                 </button>
@@ -885,14 +923,21 @@ const AppContent = () => {
             />
           </div>
         );
+        break;
 
         case 'recommend':
-          return <LocationBasedRecommendations onPetClick={handlePetClick} />;
+          content =( <div className="space-y-8">
+          
+          <div div className="fluffy-card bg-gradient-to-br from-blue-100 to-purple-50 shadow-lg p-6">
+          <LocationBasedRecommendations onPetClick={handlePetClick} />
+          </div>
+          </div>);
+          break;
 
       case 'map':
-        return (
+        content = (
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
+            <div className="fluffy-card bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">🗺️ 宠物友好场所地图</h2>
               <p className="text-gray-600 mb-4">找到您附近的宠物医院、宠物店、宠物公园等宠物友好场所，为您的毛孩子提供最好的服务。</p>
                {/* 功能特色 */}
@@ -920,24 +965,25 @@ const AppContent = () => {
             </div>
           </div>
         );
+        break;
 
       
 
       case 'profile':
-        return (
+        content = (
           <div className="space-y-6">
             {/* 档案功能导航 */}
             {profileView === 'main' && (
               <>
                 {/* 功能选择界面 */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
+                <div className="fluffy-card bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">👤 我的档案中心</h2>
                   <p className="text-gray-600 mb-8">管理您的宠物档案、健康记录和营养计划</p>
                   
                   {/* 主要功能卡片 */}
                   <div className="grid md:grid-cols-2 gap-6 mb-8">
                     <div 
-                      className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105"
+                      className="fluffy-card bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105"
                       onClick={() => setProfileView('pet-profiles')}
                     >
                       <div className="flex items-center mb-4">
@@ -975,7 +1021,7 @@ const AppContent = () => {
                 </div>
 
                 {/* 数据管理区域 */}
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
+                <div className="fluffy-card bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 数据管理</h2>
                   
                   <CrawlButton
@@ -1025,7 +1071,9 @@ const AppContent = () => {
 
              {/* 收藏管理视图 */}
       {profileView === 'favorites' && (
+        
         <div className="space-y-6">
+          
           {/* 返回按钮 */}
           <div className="flex items-center">
             <button
@@ -1048,13 +1096,24 @@ const AppContent = () => {
           </div>
 
         );
+        break;
 
       case 'ai':
-        return <AIAssistant />;
+        content = <AIAssistant />;
+        break;
 
       default:
-        return null;
+        content =null;
     }
+    // 用 PageTransition 包装内容
+    return (
+      <PageTransition 
+        currentView={currentView} 
+        isLoading={isPageTransitioning}
+      >
+        {content}
+      </PageTransition>
+    );
   };
 
   return (
@@ -1107,20 +1166,31 @@ const AppContent = () => {
           {navItems.map(({ key, icon, label }) => (
             <button
               key={key}
-              onClick={() => {
-                setCurrentView(key);
+              onClick={() => {handleNavigation(key)
                 // 如果切换到档案页面，重置为主视图
                 if (key === 'profile') {
                   setProfileView('main');
                 }
-              }}
+              }
+            }
               className={clsx(
-                "flex flex-col items-center space-y-1 p-2 transition-colors relative",
+                "flex flex-col items-center space-y-1 p-2 transition-all duration-300 relative",
                 currentView === key ? 'text-purple-600' : 'text-gray-600'
               )}
+              disabled={isPageTransitioning} 
             >
-              <span className="text-xl">{icon}</span>
+              <span className={clsx(
+                  "text-xl transition-transform duration-300",
+                  currentView === key && "animate-bounce"
+                )}>{icon}</span>
               <span className="text-xs">{label}</span>
+
+                {/* 活跃状态指示器 */}
+                {currentView === key && (
+                  <div className="absolute -bottom-1 w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
+                )}
+
+
               {key === 'search' && adoptablePets.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
                   {adoptablePets.length > 99 ? '99+' : adoptablePets.length}
@@ -1131,13 +1201,13 @@ const AppContent = () => {
           ))}
         </div>
       </nav>
-
-      {/* 加载指示器 */}
-      {isLoading && (
+      
+{/* 优化的加载指示器 - 只在数据加载时显示 */}
+{isLoading && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-4 flex items-center space-x-3">
+          <div className="fluffy-card bg-white rounded-lg shadow-lg p-4 flex items-center space-x-3">
             <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-gray-700">加载中...</span>
+            <span className="text-gray-700">数据加载中...</span>
           </div>
         </div>
       )}
@@ -1146,7 +1216,10 @@ const AppContent = () => {
       {selectedPet && (
         <PetDetailModal 
           pet={selectedPet} 
-          onClose={() => setSelectedPet(null)} 
+          onClose={() => {
+            setSelectedPet(null);
+            handleNavigation('home', true); // 返回主页面，跳过动画
+          }} 
         />
       )}
       

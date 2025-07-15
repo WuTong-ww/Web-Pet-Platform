@@ -113,6 +113,7 @@ const PetProfileManager = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {petProfiles.map((pet) => (
+                  <div key={pet.id} className="fluffy-card p-6">
                   <PetProfileCard
                     key={pet.id}
                     pet={pet}
@@ -120,6 +121,7 @@ const PetProfileManager = () => {
                     onViewNutrition={() => handleViewNutrition(pet)}
                     onDelete={() => handleDeleteProfile(pet.id)}
                   />
+                   </div>
                 ))}
               </div>
             )}

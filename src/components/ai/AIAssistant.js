@@ -192,7 +192,7 @@ const AIAssistant = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* AI能力介绍 */}
       {capabilities && (
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
+        <div className="fluffy-card bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">{capabilities.title}</h2>
           <p className="text-gray-600 mb-6">{capabilities.description}</p>
           
