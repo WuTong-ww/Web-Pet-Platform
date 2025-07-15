@@ -512,5 +512,77 @@
     "viewCount": 510,
     "favoriteCount": 74,
     "postedDate": "2025-07-14T11:52:42.794Z"
+  },
+  {
+    "id": "spca_597058",
+    "code": "597058",
+    "detailUrl": "https://www.spca.org.hk/what-we-do/animals-for-adoption-details/?code=597058",
+    "source": "spca",
+    "name": "Smiley !",
+    "type": "cat",
+    "breed": "Domestic Short hair",
+    "age": "生日: 2025-04-14",
+    "gender": "Female",
+    "description": "Hi, I'm Smiley ! I am a Female Domestic Short hair., my birthday is 2025-04-14. You can find me at Hong Kong Centre. Smiley no.597058 Domestic Short hair BREED Female GENDER 2025-04-14 BIRTHDAY(YYYY-MM-DD) 606 064 355 MICROCHIP NO. Rescued by Inspectors INTAKE Hong Kong Centre CENTRE NOTE: ABOUT ME Introverted, Lazy, Dreamer",
+    "images": [
+      "https://www.spca.org.hk/wp-content/uploads/2025/07/IMG_3758-scaled.jpeg",
+      "https://www.spca.org.hk/wp-content/uploads/2025/07/IMG_3759-scaled.jpeg",
+      "https://www.spca.org.hk/wp-content/uploads/2023/02/spca_blue.png",
+      "https://www.spca.org.hk/wp-content/uploads/2023/02/TY_immersive-500x350-1.jpg",
+      "https://www.spca.org.hk/wp-content/uploads/2023/02/dog_training.jpg"
+    ],
+    "image": "https://www.spca.org.hk/wp-content/uploads/2025/07/IMG_3758-scaled.jpeg",
+    "tags": [
+      "待領養",
+      "健康檢查",
+      "SPCA認證"
+    ],
+    "personalityTags": [
+      "friendly",
+      "active"
+    ],
+    "location": "香港",
+    "center": "SPCA Hong Kong",
+    "publishedAt": "2025-07-15T05:12:14.460Z",
+    "popularity": 56,
+    "viewCount": 188,
+    "favoriteCount": 97,
+    "postedDate": "2025-07-15T05:12:14.460Z"
+  },
+  {
+    "id": "spca_595545",
+    "code": "595545",
+    "detailUrl": "https://www.spca.org.hk/what-we-do/animals-for-adoption-details/?code=595545",
+    "source": "spca",
+    "name": "Symphony !",
+    "type": "cat",
+    "breed": "Domestic Short hair",
+    "age": "生日: 2025-04-17",
+    "gender": "Female",
+    "description": "Hi, I'm Symphony ! I am a Female Domestic Short hair., my birthday is 2025-04-17. You can find me at Hong Kong Centre. Symphony no.595545 Domestic Short hair BREED Female GENDER 2025-04-17 BIRTHDAY(YYYY-MM-DD) 606 082 354 / 846 276 773 MICROCHIP NO. Rescued by Inspectors INTAKE Hong Kong Centre CENTRE NOTE: this animal may have a current or resolved medical issue which our veterinary staff will explain to you ABOUT ME Active, Adorable, Tireless",
+    "images": [
+      "https://www.spca.org.hk/wp-content/uploads/2025/07/IMG_3755-scaled.jpeg",
+      "https://www.spca.org.hk/wp-content/uploads/2025/07/IMG_3754-scaled.jpeg",
+      "https://www.spca.org.hk/wp-content/uploads/2025/07/IMG_3756-scaled.jpeg",
+      "https://www.spca.org.hk/wp-content/uploads/2023/02/spca_blue.png",
+      "https://www.spca.org.hk/wp-content/uploads/2023/02/TY_immersive-500x350-1.jpg"
+    ],
+    "image": "https://www.spca.org.hk/wp-content/uploads/2025/07/IMG_3755-scaled.jpeg",
+    "tags": [
+      "待領養",
+      "健康檢查",
+      "SPCA認證"
+    ],
+    "personalityTags": [
+      "friendly",
+      "active"
+    ],
+    "location": "香港",
+    "center": "SPCA Hong Kong",
+    "publishedAt": "2025-07-15T05:12:18.899Z",
+    "popularity": 98,
+    "viewCount": 168,
+    "favoriteCount": 112,
+    "postedDate": "2025-07-15T05:12:18.899Z"
   }
 ]

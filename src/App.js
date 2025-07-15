@@ -985,7 +985,19 @@ const AppContent = () => {
                     disabled={isLoading}
                   />
                 </div>
-                
+                 {/* 退出登录按钮 */}
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-6">
+            <button
+              onClick={() => {
+                localStorage.removeItem('token'); // 清除登录令牌
+                setCurrentView('login'); // 导航到登录页面
+                window.location.href = '/login'; // 确保页面刷新
+              }}
+              className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors"
+            >
+              退出登录
+            </button>
+          </div>
                
               </>
             )}
@@ -1027,8 +1039,12 @@ const AppContent = () => {
 
           {/* 收藏管理组件 */}
           <FavoriteManager onPetClick={handlePetClick} />
+
+         
         </div>
       )}
+
+      
           </div>
 
         );
