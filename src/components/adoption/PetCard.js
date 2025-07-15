@@ -51,10 +51,10 @@ export default function PetCard({ pet, onClick }) {
     <div
       style={{
         width: "220px",
-        border: "1px solid #ddd",
+        border: "1px solid #a7bfff",
         borderRadius: "8px",
         padding: "10px",
-        backgroundColor: "#fff",
+        backgroundColor: "rgba(228, 187, 247, 0.25)",
         boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         cursor: "pointer",
         transition: "transform 0.2s, box-shadow 0.2s",
@@ -85,7 +85,7 @@ export default function PetCard({ pet, onClick }) {
       >
         {isFavorited(pet.id) ? "💔" : "❤️"}
       </button>
-      
+
       <img
         src={image}
         alt={name}

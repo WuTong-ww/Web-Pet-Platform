@@ -22,6 +22,8 @@ import { FavoriteProvider, useFavorite } from './contexts/FavoriteContext';
 import { AIProvider } from './contexts/AIContext';
 import AIAssistant from './components/ai/AIAssistant'; 
 import MouseClickEffect from './components/common/MouseClickEffect';
+import FluffyButton from './components/common/FluffyButton';
+import { playPetSound, playHeartSound,playClickSound, initializeSounds } from './utils/soundEffects';
 
 // 实时统计组件
 const RealTimeStats = () => {
@@ -67,6 +69,16 @@ const RealTimeStats = () => {
 
 // 宠物卡片组件
 const PetCard = ({ pet, rank, onClick }) => {
+  const handleCardClick = () => {
+    console.log('点击宠物卡片:', pet.name, pet.type);
+    
+    // 播放音效
+    playPetSound(pet.type);
+    
+    // 调用原有的点击处理
+    onClick && onClick(pet);
+  };
+
   const formatTimeAgo = (date) => {
     const now = new Date();
     const diffTime = Math.abs(now - date);
@@ -76,10 +88,15 @@ const PetCard = ({ pet, rank, onClick }) => {
 
   return (
     <div 
-      className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
-      onClick={() => onClick && onClick(pet)}
+      className="fluffy-card pet-card-breathing p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
+      onClick={handleCardClick}
     >
+      {/* 添加可爱的角标 */}
+      <div className="absolute top-2 right-2 text-2xl animate-bounce">
+        {pet.emoji || '🐾'}
+      </div>
       <div className="flex items-start space-x-4">
+        
         {rank && (
           <div className={clsx(
             "w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm",
@@ -92,7 +109,7 @@ const PetCard = ({ pet, rank, onClick }) => {
           </div>
         )}
         
-        <div className="w-16 h-16 rounded-full overflow-hidden">
+        <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-pink-200 shadow-lg">
           <PetImage 
             pet={pet} 
             size="small"
@@ -101,8 +118,6 @@ const PetCard = ({ pet, rank, onClick }) => {
         </div>
         
         <div className="flex-1">
-          
-          
           <p className="text-gray-600 mb-2">{pet.name} • {pet.age}</p>
           
           <div className="flex items-center text-sm text-gray-500 mb-3">
@@ -247,6 +262,8 @@ const PetDetailModal = ({ pet, onClose }) => {
   if (!pet) return null;
 
   const handleToggleFavorite = () => {
+    // 播放心跳音效
+  playHeartSound();
     if (isFavorited(pet.id)) {
       removeFromFavorites(pet.id);
     } else {
@@ -378,7 +395,7 @@ const PetDetailModal = ({ pet, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
@@ -576,6 +593,8 @@ const AppContent = () => {
   const { getFavoriteStats } = useFavorite();
   const favoriteStats = getFavoriteStats();
 
+
+
   // 处理爬取完成
   const handleCrawlComplete = async (result) => {
     console.log('爬取完成:', result);
@@ -672,7 +691,7 @@ const AppContent = () => {
             <RealTimeStats />
             
             {/* 快速数据更新区域 */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="bg-gradient-to-br from-blue-100 to-purple-50 shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">🔄 数据更新</h3>
@@ -718,7 +737,7 @@ const AppContent = () => {
               )}
             </div>
 {/* 搜索和筛选区域 */}
-<div className="bg-white rounded-xl shadow-lg p-6">
+<div className="bg-gradient-to-br from-blue-100 to-purple-50 rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">🔍 宠物搜索与浏览</h2>
                 <button 
@@ -870,7 +889,7 @@ const AppContent = () => {
       case 'map':
         return (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">🗺️ 宠物友好场所地图</h2>
               <p className="text-gray-600 mb-4">找到您附近的宠物医院、宠物店、宠物公园等宠物友好场所，为您的毛孩子提供最好的服务。</p>
                {/* 功能特色 */}
@@ -908,7 +927,7 @@ const AppContent = () => {
             {profileView === 'main' && (
               <>
                 {/* 功能选择界面 */}
-                <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">👤 我的档案中心</h2>
                   <p className="text-gray-600 mb-8">管理您的宠物档案、健康记录和营养计划</p>
                   
@@ -953,7 +972,7 @@ const AppContent = () => {
                 </div>
 
                 {/* 数据管理区域 */}
-                <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 数据管理</h2>
                   
                   <CrawlButton

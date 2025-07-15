@@ -190,7 +190,7 @@ const AIAssistant = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* AI能力介绍 */}
       {capabilities && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">{capabilities.title}</h2>
           <p className="text-gray-600 mb-6">{capabilities.description}</p>
           
@@ -218,7 +218,7 @@ const AIAssistant = () => {
       {/* 对话界面 */}
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         {/* 头部 */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4">
+        <div className="bg-gradient-to-r from-blue-300 to-purple-400 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">

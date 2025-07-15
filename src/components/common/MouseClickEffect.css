@@ -1,41 +1,179 @@
-.paw-print-effect {
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    font-size: 24px;
-    color: #667eea;
-    transform: translate(-50%, -50%);
-    animation: pawPrintAnimation 1s ease-out forwards;
-    user-select: none;
+.mouse-click-effects {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* 主要爪印效果 */
+.effect-main {
+  position: absolute;
+  animation: pawBounce var(--duration) ease-out forwards;
+  user-select: none;
+  text-shadow: 0 0 10px rgba(255, 182, 193, 0.8);
+}
+
+@keyframes pawBounce {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.2) rotate(10deg);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(0.9) rotate(-5deg);
+    opacity: 0.9;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(3deg);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(0.95) rotate(-2deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+/* 粒子效果 */
+.effect-particle {
+  position: absolute;
+  animation: sparkleFloat var(--duration) ease-out forwards;
+  user-select: none;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+@keyframes sparkleFloat {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1.3) rotate(90deg);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1) rotate(180deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 爱心效果 */
+.effect-heart {
+  position: absolute;
+  animation: heartFloat var(--duration) ease-out forwards;
+  user-select: none;
+  text-shadow: 0 0 12px rgba(255, 105, 180, 0.8);
+}
+
+@keyframes heartFloat {
+  0% {
+    transform: translate(-50%, -50%) scale(0) translateY(0);
+    opacity: 1;
+  }
+  20% {
+    transform: translate(-50%, -50%) scale(1.2) translateY(-10px);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(0.9) translateY(-20px);
+    opacity: 0.9;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.1) translateY(-30px);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(0.95) translateY(-40px);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0) translateY(-50px);
+    opacity: 0;
+  }
+}
+
+/* 涟漪效果 */
+.effect-ripple {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(255, 182, 193, 0.6);
+  border-radius: 50%;
+  animation: rippleExpand var(--duration) ease-out forwards;
+  background: transparent;
+}
+
+@keyframes rippleExpand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+    border-width: 3px;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(10);
+    opacity: 0.5;
+    border-width: 2px;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(20);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* 针对不同设备的响应式调整 */
+@media (max-width: 768px) {
+  .effect-main {
+    font-size: 0.8em;
   }
   
-  @keyframes pawPrintAnimation {
-    0% {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
-    }
-    50% {
-      opacity: 0.8;
-      transform: translate(-50%, -50%) scale(1.2) rotate(180deg);
-    }
-    100% {
-      opacity: 0;
-      transform: translate(-50%, -50%) scale(0.8) rotate(360deg);
-    }
+  .effect-particle {
+    font-size: 0.7em;
   }
   
-  /* 添加多种爪印效果变化 */
-  .paw-print-effect.variant-1 {
-    color: #764ba2;
-    font-size: 20px;
+  .effect-heart {
+    font-size: 0.7em;
+  }
+}
+
+/* 减少动画效果（针对偏好减少动画的用户） */
+@media (prefers-reduced-motion: reduce) {
+  .effect-main,
+  .effect-particle,
+  .effect-heart,
+  .effect-ripple {
+    animation-duration: 0.3s;
+  }
+}
+
+/* 深色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .effect-main {
+    text-shadow: 0 0 15px rgba(255, 182, 193, 1);
   }
   
-  .paw-print-effect.variant-2 {
-    color: #22c55e;
-    font-size: 28px;
+  .effect-particle {
+    text-shadow: 0 0 12px rgba(255, 255, 255, 1);
   }
   
-  .paw-print-effect.variant-3 {
-    color: #f59e0b;
-    font-size: 26px;
+  .effect-heart {
+    text-shadow: 0 0 18px rgba(255, 105, 180, 1);
   }
+  
+  .effect-ripple {
+    border-color: rgba(255, 182, 193, 0.8);
+  }
+}

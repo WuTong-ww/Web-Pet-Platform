@@ -64,7 +64,7 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
   return (
     <div className="space-y-8">
       {/* 地区选择区域 */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">🌎 选择您所在的地区</h2>
         <p className="text-gray-600 mb-6">根据您的地区，我们将为您推荐合适的领养机构和宠物</p>
         
@@ -77,7 +77,7 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
                 region.comingSoon 
                   ? 'bg-gray-100 text-gray-500 cursor-not-allowed relative' 
                   : selectedRegion?.id === region.id
-                    ? 'bg-blue-600 text-white shadow-md'
+                    ? 'bg-purple-500 text-white shadow-md'
                     : 'bg-blue-50 hover:bg-blue-100 text-blue-700 hover:shadow-md'
               }`}
             >
@@ -116,7 +116,7 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
       {selectedRegion && !loading && (
         <>
           {/* 地区信息头部 */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
             <div className="flex items-center mb-4">
               <div className="text-3xl mr-3">{selectedRegion.emoji}</div>
               <div>
@@ -133,7 +133,7 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
           </div>
           
           {/* 领养平台列表 */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               📍 {selectedRegion.name} 地区领养平台
             </h2>
@@ -141,7 +141,7 @@ const LocationBasedRecommendations = ({ onPetClick }) => {
           </div>
           
           {/* 宠物列表 */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               🐾 {selectedRegion.name} 地区待领养宠物
             </h2>

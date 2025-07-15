@@ -26,9 +26,9 @@ body {
 
 /* 卡片样式 */
 .card {
-  background: white;
+  background: rgba(202, 173, 237, 0.402);
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(241, 247, 169, 0.404);
   transition: all 0.3s ease;
 }
 
@@ -161,4 +161,26 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+/* 宠物卡片呼吸效果 */
+.pet-card-breathing {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* 心跳动画 */
+.heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1); }
+  50% { transform: scale(1.05); }
+  75% { transform: scale(1.1); }
 }

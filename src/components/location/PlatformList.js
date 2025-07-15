@@ -107,7 +107,7 @@ const PlatformList = ({ platforms }) => {
                 href={platform.url} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="block w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-lg transition-colors"
+                className="block w-full py-2 bg-purple-500 hover:bg-blue-700 text-white text-center rounded-lg transition-colors"
               >
                 访问官网
               </a>

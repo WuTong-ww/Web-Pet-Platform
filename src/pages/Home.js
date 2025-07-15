@@ -31,7 +31,7 @@ const Home = () => {
 
       {/* 地区选择器组件 */}
       <div className="mb-10">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             🌎 选择您所在的地区
           </h2>

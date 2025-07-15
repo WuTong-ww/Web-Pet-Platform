@@ -120,7 +120,7 @@ const CrawlButton = ({ onCrawlStart, onCrawlComplete, onCrawlError, disabled = f
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div className="bg-gradient-to-br from-blue-650 to-white-0 rounded-xl shadow-lg p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">🕷️ 香港SPCA数据爬取</h3>
