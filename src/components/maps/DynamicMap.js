@@ -270,11 +270,11 @@ const updateMarkers = (AMap) => {
       });
 
       // 添加点击事件
-      if (onMarkerClick) {
-        placeMarker.on('click', () => {
-          onMarkerClick(place);
-        });
-      }
+      // if (onMarkerClick) {
+      //   placeMarker.on('click', () => {
+      //     onMarkerClick(place);
+      //   });
+      // }
 
       // 添加信息窗体
       if (showInfoWindow && infoWindowRef.current) {

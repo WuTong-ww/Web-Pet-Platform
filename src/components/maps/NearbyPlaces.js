@@ -100,8 +100,10 @@ const NearbyPlaces = () => {
       console.log('🔍 获取场所详情:', place);
       const details = await fetchPlaceDetails(place.id);
       console.log('✅ 场所详情获取成功:', details);
+      
       setSelectedPlace({ ...place, ...details });
       setShowDetails(true);
+      console.log('ok');
     } catch (err) {
       console.error('获取详情失败:', err);
       console.log('🔄 使用基础信息显示详情');
@@ -388,11 +390,27 @@ const NearbyPlaces = () => {
       )}
 
       {/* 详情模态框 */}
-      {showDetails && selectedPlace && (
+      {showDetails && setShowDetails && selectedPlace && (
         <div className="modal-overlay" onClick={() => setShowDetails(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              top: `${window.scrollY + 100}px`, // 根据当前滚动位置动态调整
+              left: '50%',
+              transform: 'translateX(-50%)',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              marginTop: '0',
+              zIndex: 1100,
+              width: '90%',
+              maxWidth: '600px',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.2)'
+            }}>
             <div className="modal-header">
-              <h3>{selectedPlace.name}</h3>
+              <h3>{selectedPlace.name|| '场所详情'}</h3>
+
+              
+
               <button 
                 className="close-btn"
                 onClick={() => setShowDetails(false)}
@@ -402,40 +420,44 @@ const NearbyPlaces = () => {
             </div>
             
             <div className="modal-body">
-              {selectedPlace.photos && selectedPlace.photos.length > 0 && (
+              {selectedPlace.photos && selectedPlace.photos.length > 0 ?  (
                 <div className="place-photos">
                   {selectedPlace.photos.slice(0, 3).map((photo, index) => (
                     <img key={index} src={photo} alt={`${selectedPlace.name} ${index + 1}`} />
                   ))}
                 </div>
+                ) : (
+                  <div className="no-photos">
+                    <p>暂无图片</p>
+                  </div>
               )}
               
               <div className="place-details">
                 <div className="detail-row">
                   <strong>地址：</strong>
-                  <span>{selectedPlace.address}</span>
+                  <span>{selectedPlace.address || '未知地址'}</span>
                 </div>
                 
-                {selectedPlace.phone && (
+                {selectedPlace.phone && selectedPlace.phone.length> 0 && (
                   <div className="detail-row">
                     <strong>电话：</strong>
-                    <span>{selectedPlace.phone}</span>
+                    <span>{Array.isArray(selectedPlace.phone) ? selectedPlace.phone[0] : selectedPlace.phone}</span>
                   </div>
                 )}
                 
                 <div className="detail-row">
                   <strong>营业时间：</strong>
-                  <span>{selectedPlace.operatingHours}</span>
+                  <span>{selectedPlace.operatingHours || '未知'}</span>
                 </div>
                 
                 <div className="detail-row">
                   <strong>评分：</strong>
-                  <span>{selectedPlace.rating}⭐ ({selectedPlace.reviewCount}条评价)</span>
-                </div>
+                  <span>{selectedPlace.rating || '暂无'}⭐ ({selectedPlace.reviewCount || 0}条评价)</span>
+          </div>
                 
                 <div className="detail-row">
                   <strong>距离：</strong>
-                  <span>{selectedPlace.distance}</span>
+                  <span>{selectedPlace.distance|| '未知'}</span>
                 </div>
                 
                 {selectedPlace.description && (
@@ -456,9 +478,13 @@ const NearbyPlaces = () => {
                   </div>
                 )}
                 
-                
-              </div>
-            </div>
+              {/* 添加调试信息 */}
+          {/* <div className="debug-info" style={{fontSize: '12px', color: '#888', marginTop: '10px'}}>
+            <p>ID: {selectedPlace.id}</p>
+            <p>数据来源: {selectedPlace.dataSource || '高德地图'}</p>
+          </div> */}
+        </div>
+      </div>
             
             <div className="modal-footer">
               <button 

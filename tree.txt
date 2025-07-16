@@ -1,70 +1,130 @@
-Folder PATH listing for volume Windows-SSD
-Volume serial number is 0DA4-49ED
-C:.
-│   .env
-│   .gitignore
-│   npm
-│   package-lock.json
-│   package.json
-│   postcss.config.js
-│   README.md
-│   tailwind.config.js
-│   tree.txt
-│   
-├───public
-│       favicon.ico
-│       index.html
-│       logo192.png
-│       logo512.png
-│       manifest.json
-│       robots.txt
-│       
-└───src
-    │   App.css
-    │   App.js
-    │   App.test.js
-    │   index.css
-    │   index.js
-    │   logo.svg
-    │   reportWebVitals.js
-    │   setupTests.js
-    │   密钥
-    │   
-    ├───components
-    │   ├───adoption
-    │   │       AdoptionFilter.js
-    │   │       PetCard.js
-    │   │       PopularityRanking.js
-    │   │       PopularPetsGrid.js
-    │   │       
-    │   ├───ai
-    │   │       MoodAnalyzer.js
-    │   │       SmartAssistant.js
-    │   │       
-    │   ├───common
-    │   │       Header.js
-    │   │       LoadingSpinner.js
-    │   │       Navigation.js
-    │   │       
-    │   ├───maps
-    │   │       PetActivityMap.js
-    │   │       
-    │   └───profiles
-    │           HealthRecord.js
-    │           PetProfile.js
-    │           
-    ├───contexts
-    │       RealTimeDataContext.js
-    │       
-    ├───services
-    │       adoptionService.js
-    │       aiService.js
-    │       mapService.js
-    │       
-    ├───styles
-    │       components.css
-    │       globals.css
-    │       
-    └───utils
-            dateUtils.js
-            
+C:\Users\WT\Desktop\web\pet2.0
+|-- README.md
+|-- npm
+|-- package-lock.json
+|-- package.json
+|-- postcss.config.js
+|-- public
+|   |-- favicon.ico
+|   |-- ficon.ico
+|   |-- index.html
+|   |-- logbg.jpg
+|   |-- logo.png
+|   |-- logo192.png
+|   |-- logo512.png
+|   |-- manifest.json
+|   |-- robots.txt
+|   `-- sounds
+|       |-- bark.mp3
+|       |-- cute-click.mp3
+|       |-- heart-beat.mp3
+|       `-- meow.mp3
+|-- server
+|   |-- auth.js
+|   |-- check-config.js
+|   |-- crawler
+|   |   |-- debug-spca.js
+|   |   `-- spca.js
+|   |-- data
+|   |   |-- chinaPets.json
+|   |   `-- pet_database.db
+|   |-- database.js
+|   |-- db.js
+|   |-- debug-image-issues.js
+|   |-- index.js
+|   |-- migrate-to-sqlite.js
+|   |-- package-lock.json
+|   |-- package.json
+|   |-- quick-test.js
+|   |-- test-image-extraction.js
+|   |-- test-image-proxy.js
+|   |-- test-spca-images.js
+|   |-- test.js
+|   `-- users.json
+|-- src
+|   |-- App.css
+|   |-- App.js
+|   |-- App.test.js
+|   |-- PrivateRoute.js
+|   |-- components
+|   |   |-- admin
+|   |   |   `-- DataManagement.js
+|   |   |-- adoption
+|   |   |   |-- AdoptionFilter.js
+|   |   |   |-- PetCard.js
+|   |   |   `-- PetList.js
+|   |   |-- ai
+|   |   |   |-- AIAssistant.css
+|   |   |   `-- AIAssistant.js
+|   |   |-- common
+|   |   |   |-- CrawlButton.js
+|   |   |   |-- FluffyButton.js
+|   |   |   |-- Header.js
+|   |   |   |-- HeroSection.js
+|   |   |   |-- LoadingSpinner.js
+|   |   |   |-- MouseClickEffect.css
+|   |   |   |-- MouseClickEffect.js
+|   |   |   |-- Navigation.js
+|   |   |   |-- PageTransition.css
+|   |   |   |-- PageTransition.js
+|   |   |   `-- PetImage.js
+|   |   |-- favorites
+|   |   |   `-- FavoriteManager.js
+|   |   |-- location
+|   |   |   |-- LocationBasedRecommendations.js
+|   |   |   |-- PlatformList.js
+|   |   |   `-- RegionSelector.js
+|   |   |-- maps
+|   |   |   |-- DynamicMap.css
+|   |   |   |-- DynamicMap.js
+|   |   |   |-- LocationPicker.css
+|   |   |   |-- LocationPicker.js
+|   |   |   |-- NearbyPlaces.css
+|   |   |   |-- NearbyPlaces.js
+|   |   |   |-- PetActivityMap.js
+|   |   |   |-- StaticMap.css
+|   |   |   |-- StaticMap.js
+|   |   |   `-- setback.js
+|   |   `-- profiles
+|   |       |-- HealthRecord.js
+|   |       |-- MedicalRecordForm.js
+|   |       |-- NutritionCalculator.js
+|   |       |-- PetProfile.js
+|   |       |-- PetProfileCard.js
+|   |       |-- PetProfileDetail.js
+|   |       |-- PetProfileForm.js
+|   |       `-- PetProfileManager.js
+|   |-- contexts
+|   |   |-- AIContext.js
+|   |   |-- FavoriteContext.js
+|   |   |-- PetProfileContext.js
+|   |   `-- RealTimeDataContext.js
+|   |-- index.css
+|   |-- index.js
+|   |-- logo.svg
+|   |-- pages
+|   |   |-- GlobalAdoption.js
+|   |   |-- Home.js
+|   |   |-- LoginPage.js
+|   |   |-- MapPage.css
+|   |   |-- MapPage.js
+|   |   |-- RegionDetail.js
+|   |   `-- RegisterPage.js
+|   |-- reportWebVitals.js
+|   |-- services
+|   |   |-- adoptionService.js
+|   |   |-- aiService.js
+|   |   |-- locationService.js
+|   |   `-- mapService.js
+|   |-- setupProxy.js
+|   |-- setupTests.js
+|   |-- styles
+|   |   |-- components.css
+|   |   `-- globals.css
+|   |-- utils
+|   |   |-- dateUtils.js
+|   |   |-- soundEffects.js
+|   |   `-- textUtils.js
+|   
+|-- tailwind.config.js
+|-- tree.txt
