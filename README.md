@@ -1,70 +1,51 @@
-# Getting Started with Create React App
+# 🐾 Petpet 宠物平台
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+一个以「领养代替购买」理念驱动的全方位宠物服务平台，集成了实时数据、地图服务、宠物健康管理和 AI 智能助手，致力于为用户和毛孩子们搭建一个有爱、高效的互动桥梁。
 
-## Available Scripts
+## ✨ 主要功能
 
-In the project directory, you can run:
+### 1. 实时宠物领养动态
+- 使用 Petfinder API 实时展示全球待领养宠物列表。
+- 集成 SPCA（香港爱护动物协会）数据，支持爬虫更新。
+- 高级筛选功能支持按地区、品种、年龄、性别、体型等维度筛选。
 
-### `npm start`
+### 2. 宠物友好地图服务
+- 接入高德地图 API，展示附近的宠物咖啡厅、公园、步道、医院等宠物友好场所。
+- 支持活动标注、地图导航、用户评价。
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 3. 宠物档案与健康管理
+- 支持创建多个宠物的电子健康档案：疫苗、驱虫、体检记录一目了然。
+- 营养与喂养计算器基于权威数据库，个性化提供每日食量与营养建议。
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 4. AI 驱动互动体验
+- AI 咨询助手：解答喂养、训练、健康等常见问题。
+- 急诊模式：当检测到如“呕吐”“拉稀”等关键词时，立即提供急救建议与就医提示。
 
-### `npm test`
+### 5. 收藏与个性推荐
+- 收藏心仪宠物并管理关注列表。
+- 基于地理位置与偏好，推荐可领养宠物与相关活动。
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🧱 技术栈
 
-### `npm run build`
+- 前端：React + TailwindCSS + React Router
+- 后端：Node.js + Express + SQLite3
+- 数据源：Petfinder API, SPCA 香港（爬虫）
+- AI 服务：ChatECNU 接口
+- 地图服务：高德地图 API
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 启动方式
+- 启动前端
+```
+npm start
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- 启动后端
+```
+cd server
+node index.js
+```
+### 安装依赖
+```bash
+npm install
+cd server && npm install
+```
