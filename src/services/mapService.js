@@ -3,13 +3,13 @@
 
 const AMAP_CONFIG = {
   // 静态地图API密钥（Web服务API）
-  staticKey: process.env.REACT_APP_AMAP_STATIC_KEY || '52418d9cff9ca02089028f5861d11696',
+  staticKey: process.env.REACT_APP_AMAP_STATIC_KEY || '',
   
   // 动态地图API密钥（JS API）
-  dynamicKey: process.env.REACT_APP_AMAP_DYNAMIC_KEY || 'a765f2076d4d2d2e18ff9688fdd6d445',
+  dynamicKey: process.env.REACT_APP_AMAP_DYNAMIC_KEY || '',
   
   // 安全密钥（仅动态地图使用）
-  securityJsCode: process.env.REACT_APP_AMAP_SECURITY_CODE || 'f18b1ad59c7860dda3b7bbd679ec265c',
+  securityJsCode: process.env.REACT_APP_AMAP_SECURITY_CODE || '',
   
   baseUrl: 'https://restapi.amap.com/v3',
   webServiceUrl: 'https://restapi.amap.com/v3'
